@@ -1,0 +1,77 @@
+{% extends "dashboard.html" %} {% block page_title %}Data Warga{% endblock %} {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+{% endblock %} {% block content %}
+<div class="page-content">
+  <div class="content-card">
+    <!-- Tombol Tambah -->
+    <div style="margin-bottom: 15px">
+      <a href="{{ url_for('tambah_warga') }}" class="btn-submit"> + Tambah Warga </a>
+    </div>
+
+    <!-- TABEL DATA WARGA -->
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>NIK</th>
+            <th>Nama</th>
+            <th>Tanggal Lahir</th>
+            <th>No HP</th>
+            <th>RT</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in data_warga %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ w.nik }}</td>
+            <td>{{ w.nama }}</td>
+            <td>{{ w.tanggal_lahir }}</td>
+            <td>{{ w.nomor_hp }}</td>
+            <td>{{ w.rt }}</td>
+            <td>
+              {% if w.status|lower == 'aktif' %}
+              <span style="color: green; font-weight: 600">Aktif</span>
+              {% else %}
+              <span style="color: red; font-weight: 600">Tidak Aktif</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="action-buttons" style="display: flex; gap: 5px">
+                <!-- Tombol Edit -->
+                <a href="{{ url_for('edit_warga', id=w.id) }}" class="btn-edit" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </a>
+
+                <!-- Tombol Hapus -->
+                <form method="POST" action="{{ url_for('hapus_warga', id=w.id) }}" style="display: inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus warga ini?');">
+                  <button type="submit" class="btn-delete" title="Hapus" style="background: none; border: none; padding: 0; cursor: pointer">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center">Belum ada data warga</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

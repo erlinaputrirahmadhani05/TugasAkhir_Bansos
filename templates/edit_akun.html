@@ -1,0 +1,56 @@
+{% extends "dashboard.html" %}
+
+{% block page_title %}Edit Akun{% endblock %}
+{% block breadcrumb %}{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    <div class="content-card">
+        <form class="user-form" method="POST" action="{{ url_for('edit_akun', user_id=user.id) }}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="nama_lengkap">Nama Lengkap <span class="required">*</span></label>
+                    <input type="text" id="nama_lengkap" name="nama_lengkap" value="{{ user.nama_lengkap }}" required placeholder="Masukkan nama lengkap">
+                </div>
+                <div class="form-group">
+                    <label for="username">Username <span class="required">*</span></label>
+                    <input type="text" id="username" name="username" value="{{ user.username }}" required placeholder="Masukkan username">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="email">Email <span class="required">*</span></label>
+                    <input type="email" id="email" name="email" value="{{ user.email }}" required placeholder="Masukkan email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password <span class="optional">(Kosongkan jika tidak ingin mengubah)</span></label>
+                    <input type="password" id="password" name="password" placeholder="Masukkan password baru">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="role">Role <span class="required">*</span></label>
+                    <select id="role" name="role" required>
+                        <option value="petugas lapangan" {% if user.role == 'petugas lapangan' %}selected{% endif %}>Petugas Lapangan</option>
+                        <option value="superadmin" {% if user.role == 'superadmin' %}selected{% endif %}>Super Administrator</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="status_akun">Status Akun <span class="required">*</span></label>
+                    <select id="status_akun" name="status_akun" required>
+                        <option value="aktif" {% if user.status_akun == 'aktif' %}selected{% endif %}>Aktif</option>
+                        <option value="nonaktif" {% if user.status_akun == 'nonaktif' %}selected{% endif %}>Nonaktif</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('kelola_akun') }}" class="btn-cancel">Batal</a>
+                <button type="submit" class="btn-submit">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

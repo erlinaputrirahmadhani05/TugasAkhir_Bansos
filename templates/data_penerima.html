@@ -1,0 +1,57 @@
+{% extends "dashboard.html" %}
+
+{% block page_title %}Data Penerima{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="content-card">
+
+    <!-- Tombol hanya muncul untuk superadmin -->
+    {% if session.role|lower == 'superadmin' %}
+    <div style="margin-bottom:15px;">
+      <a href="{{ url_for('download_laporan') }}" class="btn-download">
+        Download Laporan Excel
+      </a>
+    </div>
+    {% endif %}
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Nama</th>
+            <th>NIK</th>
+            <th>RT</th>
+            <th>Tanggal Terima</th>
+            <th>Tahap</th>
+            <th>Bukti</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in data %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ d.nama }}</td>
+            <td>{{ d.nik }}</td>
+            <td>{{ d.rt }}</td>
+            <td>{{ d.tanggal_terima or '-' }}</td>
+            <td>{{ d.tahap or '-' }}</td>
+            <td>
+              {% if d.bukti %}
+              <img src="{{ url_for('static', filename='uploads/' + d.bukti) }}" class="bukti-img">
+              {% else %} - {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
