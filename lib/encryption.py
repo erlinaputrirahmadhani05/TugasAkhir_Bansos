@@ -1,6 +1,7 @@
 import hashlib
 import base64
 import time
+import math
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
@@ -105,33 +106,50 @@ def rc4_encrypt(data, key):
     return bytes(hasil_enkripsi)
 
 def blum_blum_shub_generate_iv(length_bytes=16):
-    p = 383  # Bilangan prima ≡ 3 (mod 4)
-    q = 503  # Bilangan prima ≡ 3 (mod 4)
-    n = p * q  # n = 192649
+    # 1. Pilih bilangan prima (≡ 3 mod 4)
+    p = 383
+    q = 503
 
+    # 2. Hitung n = p * q
+    n = p * q
+
+    # 3. Pilih seed (s)
     seed = int(time.time() * 1000000) % n
-    if seed % 2 == 0:
-        seed += 1
-    if seed == 0:
-        seed = 1
-    
-    x = seed
+
+    # Pastikan seed valid: 2 ≤ s < n
+    if seed < 2:
+        seed = 2
+
+    # Pastikan relatif prima dengan n (gcd = 1)
+    while math.gcd(seed, n) != 1:
+        seed = (seed + 1) % n
+        if seed < 2:
+            seed = 2
+
+    # 4. Hitung x0 = s^2 mod n
+    x = (seed * seed) % n
+
+    # 5. Generate bit acak
+    jumlah_bit = length_bytes * 8
     iv_bits = []
-    jumlah_bit_dibutuhkan = length_bytes * 8
-    
-    for _ in range(jumlah_bit_dibutuhkan):
+
+    for _ in range(jumlah_bit):
+        # xi = xi-1^2 mod n
         x = (x * x) % n
+
+        # ambil LSB
         bit = x & 1
         iv_bits.append(bit)
-    
+
+    # 6. Konversi bit → byte
     iv_bytes = bytearray()
     for i in range(0, len(iv_bits), 8):
-        byte_value = 0
+        byte = 0
         for j in range(8):
             if i + j < len(iv_bits):
-                byte_value |= (iv_bits[i + j] << j)
-        iv_bytes.append(byte_value)
-    
+                byte |= (iv_bits[i + j] << j)
+        iv_bytes.append(byte)
+
     return bytes(iv_bytes[:length_bytes])
 
 def aes_cbc_encrypt(data_bytes, key):

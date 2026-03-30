@@ -429,7 +429,7 @@ def simpan_warga(id=None):
                         updated_at=NOW()
                     WHERE id=%s
                 """
-                cursor.execute(query, (nik_enc, nama_enc, tanggal_lahir_enc, nomor_hp_enc, rt, status, user_id, id))
+                cursor.execute(query, (nik_enc, nama_enc, tanggal_lahir_enc, nomor_hp_enc, rt_enc, status, user_id, id))
                 flash("Data warga berhasil diperbarui", "success")
             else:
                 # INSERT
@@ -439,7 +439,7 @@ def simpan_warga(id=None):
                     nomor_hp_encrypted, rt, status, created_by)
                     VALUES (%s,%s,%s,%s,%s,%s,%s)
                 """
-                cursor.execute(query, (nik_enc, nama_enc, tanggal_lahir_enc, nomor_hp_enc, rt, status, user_id))
+                cursor.execute(query, (nik_enc, nama_enc, tanggal_lahir_enc, nomor_hp_enc, rt_enc, status, user_id))
                 flash("Data warga berhasil disimpan", "success")
 
             conn.commit()
@@ -456,7 +456,66 @@ def simpan_warga(id=None):
 @app.route('/warga-penerima/edit/<int:id>', methods=['GET', 'POST'])
 @require_login
 def edit_warga(id):
-    return simpan_warga(id)
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        nik = request.form.get('nik')
+        nama = request.form.get('nama')
+        tanggal_lahir = request.form.get('tanggal_lahir')
+        nomor_hp = request.form.get('nomor_hp')
+        rt = request.form.get('rt')
+        status = request.form.get('status')
+
+        data_encrypted = {
+            "nik": encrypt_data(nik),
+            "nama": encrypt_data(nama),
+            "tanggal_lahir": encrypt_data(tanggal_lahir),
+            "nomor_hp": encrypt_data(nomor_hp),
+            "rt": encrypt_data(rt),
+        }
+
+        cursor.execute("""
+            UPDATE warga_penerima 
+            SET nik_encrypted=%s, nama_encrypted=%s, tanggal_lahir_encrypted=%s,
+                nomor_hp_encrypted=%s, rt_encrypted=%s, status=%s
+            WHERE id=%s
+        """, (
+            data_encrypted["nik"],
+            data_encrypted["nama"],
+            data_encrypted["tanggal_lahir"],
+            data_encrypted["nomor_hp"],
+            data_encrypted["rt"],
+            status,
+            id
+        ))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        # ✅ FIX DI SINI
+        return redirect(url_for('warga_penerima'))
+
+    # =====================
+    # GET (tampilkan form)
+    # =====================
+    cursor.execute("SELECT * FROM warga_penerima WHERE id=%s", (id,))
+    warga = cursor.fetchone()
+
+    warga = {
+        "nik": decrypt_data(warga["nik_encrypted"]),
+        "nama": decrypt_data(warga["nama_encrypted"]),
+        "tanggal_lahir": decrypt_data(warga["tanggal_lahir_encrypted"]),
+        "nomor_hp": decrypt_data(warga["nomor_hp_encrypted"]),
+        "rt": decrypt_data(warga["rt_encrypted"]),
+        "status": warga["status"]
+    }
+
+    cursor.close()
+    conn.close()
+
+    return render_template("tambah_warga.html", warga=warga)
 
 @app.route('/warga-penerima/hapus/<int:id>', methods=['POST'])
 @require_login
