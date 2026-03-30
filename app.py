@@ -307,7 +307,7 @@ def warga_penerima():
             "nama": decrypt_data(r["nama_encrypted"]),
             "tanggal_lahir": decrypt_data(r["tanggal_lahir_encrypted"]),
             "nomor_hp": decrypt_data(r["nomor_hp_encrypted"]) if r["nomor_hp_encrypted"] else "",
-            "rt": r["rt"],
+            "rt": decrypt_data(r["rt_encrypted"]),
             "status": r["status"].capitalize()
         })
 
@@ -327,13 +327,14 @@ def tambah_warga():
             nama = request.form.get('nama')
             tanggal_lahir = request.form.get('tanggal_lahir')
             nomor_hp = request.form.get('nomor_hp')
-            rt = request.form.get('rt')
+            rt = request.form.get('rt') 
             status = request.form.get('status')
             user_id = session.get('user_id')
 
             nik_enc = encrypt_data(nik)
             nama_enc = encrypt_data(nama)
             tanggal_lahir_enc = encrypt_data(tanggal_lahir)
+            rt_enc = encrypt_data(rt)
             nomor_hp_enc = encrypt_data(nomor_hp) if nomor_hp else None
 
             conn = get_db_connection()
@@ -342,7 +343,7 @@ def tambah_warga():
             query = """
                 INSERT INTO warga_penerima
                 (nik_encrypted, nama_encrypted, tanggal_lahir_encrypted,
-                nomor_hp_encrypted, rt, status, created_by)
+                nomor_hp_encrypted, rt_encrypted, status, created_by)
                 VALUES (%s,%s,%s,%s,%s,%s,%s)
             """
 
@@ -351,7 +352,7 @@ def tambah_warga():
                 nama_enc,
                 tanggal_lahir_enc,
                 nomor_hp_enc,
-                rt,
+                rt_enc,
                 status,
                 user_id
             ))
@@ -388,7 +389,7 @@ def simpan_warga(id=None):
                 "nama": decrypt_data(r["nama_encrypted"]),
                 "tanggal_lahir": decrypt_data(r["tanggal_lahir_encrypted"]),
                 "nomor_hp": decrypt_data(r["nomor_hp_encrypted"]) if r["nomor_hp_encrypted"] else "",
-                "rt": r["rt"],
+                "rt": decrypt_data(r["rt_encrypted"]),
                 "status": r["status"]
             }
         else:
@@ -408,6 +409,7 @@ def simpan_warga(id=None):
             nik_enc = encrypt_data(nik)
             nama_enc = encrypt_data(nama)
             tanggal_lahir_enc = encrypt_data(tanggal_lahir)
+            rt_enc = encrypt_data(rt)
             nomor_hp_enc = encrypt_data(nomor_hp) if nomor_hp else None
 
             conn = get_db_connection()
@@ -421,7 +423,7 @@ def simpan_warga(id=None):
                         nama_encrypted=%s,
                         tanggal_lahir_encrypted=%s,
                         nomor_hp_encrypted=%s,
-                        rt=%s,
+                        rt_encrypted=%s,
                         status=%s,
                         updated_by=%s,
                         updated_at=NOW()
@@ -485,7 +487,7 @@ def data_penerima():
         # Hanya data yang diinput oleh petugas ini
         cursor.execute("""
             SELECT p.id, p.tanggal_terima, p.tahap, p.tahun, p.bukti_terima_path AS bukti,
-                   w.nama_encrypted, w.nik_encrypted, w.rt
+                   w.nama_encrypted, w.nik_encrypted, w.rt_encrypted
             FROM data_penerima p
             JOIN warga_penerima w ON p.warga_id = w.id
             WHERE p.input_by = %s
@@ -495,7 +497,7 @@ def data_penerima():
         # Admin / superadmin: semua data
         cursor.execute("""
             SELECT p.id, p.tanggal_terima, p.tahap, p.tahun, p.bukti_terima_path AS bukti,
-                   w.nama_encrypted, w.nik_encrypted, w.rt
+                   w.nama_encrypted, w.nik_encrypted, w.rt_encrypted
             FROM data_penerima p
             JOIN warga_penerima w ON p.warga_id = w.id
             ORDER BY p.tanggal_terima DESC
@@ -512,7 +514,7 @@ def data_penerima():
             "id": r["id"],
             "nama": decrypt_data(r["nama_encrypted"]),
             "nik": decrypt_data(r["nik_encrypted"]),
-            "rt": r["rt"],
+            "rt": decrypt_data(r["rt_encrypted"]),
             "tanggal_terima": r["tanggal_terima"].strftime("%Y-%m-%d") if r["tanggal_terima"] else "",
             "tahap": r["tahap"],
             "tahun": r["tahun"],
@@ -535,7 +537,7 @@ def input_data_penerima():
 
     # Ambil daftar warga yang bisa dipilih oleh petugas ini (belum pernah diinput olehnya)
     cursor.execute("""
-        SELECT id, nama_encrypted, rt
+        SELECT id, nama_encrypted, rt_encrypted
         FROM warga_penerima
         WHERE status='Aktif'
         ORDER BY nama_encrypted
@@ -545,6 +547,7 @@ def input_data_penerima():
     # Dekripsi nama supaya template tidak error
     for w in warga_list:
         w['nama'] = decrypt_data(w['nama_encrypted'])
+        w['rt'] = decrypt_data(w['rt_encrypted'])
 
     current_year = datetime.now().year  # Kirim ke template
 
@@ -622,7 +625,7 @@ def evaluasi_penyaluran():
             "id": w['id'],
             "nama": decrypt_data(w['nama_encrypted']),
             "nik": decrypt_data(w['nik_encrypted']),
-            "rt": w['rt'],
+            "rt": decrypt_data(w["rt_encrypted"]),
             "status": status
         })
 
@@ -672,7 +675,7 @@ def download_laporan():
             tidak_menerima.append({
                 "Nama": decrypt_data(w["nama_encrypted"]),
                 "NIK": decrypt_data(w["nik_encrypted"]),
-                "RT": w["rt"]
+                "RT": decrypt_data(w["rt_encrypted"])
             })
 
     df_tidak = pd.DataFrame(tidak_menerima)
@@ -730,7 +733,7 @@ def download_laporan():
 
                 worksheet.write(row_idx, 0, decrypt_data(warga["nama_encrypted"]), cell_center_format)
                 worksheet.write(row_idx, 1, decrypt_data(warga["nik_encrypted"]), cell_center_format)
-                worksheet.write(row_idx, 2, warga["rt"], cell_center_format)
+                worksheet.write(row_idx, 2, warga["rt_encrypted"], cell_center_format)
                 worksheet.write(row_idx, 3, str(p["tanggal_terima"]), cell_center_format)
                 worksheet.write_blank(row_idx, 4, None, bukti_border_format)
 

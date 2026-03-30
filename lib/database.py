@@ -70,20 +70,6 @@ def _get_cursor(connection):
             use_dict = False
     return cursor, use_dict
 
-
-def _convert_result_to_dict(result, use_dict, cursor):
-    """
-    Helper function untuk convert result ke dict jika perlu
-    """
-    if result and not isinstance(result, dict) and not use_dict:
-        columns = [desc[0] for desc in cursor.description]
-        if isinstance(result, (list, tuple)) and len(result) > 0:
-            if isinstance(result[0], tuple):
-                return [dict(zip(columns, row)) for row in result]
-            else:
-                return dict(zip(columns, result))
-    return result
-
 def init_database():
     """
     Membuat tabel users dan data_penerima jika belum ada
@@ -109,7 +95,7 @@ def init_database():
             username VARCHAR(100) NOT NULL UNIQUE,
             password VARCHAR(255) NOT NULL,
             email VARCHAR(255) NOT NULL UNIQUE,
-            role VARCHAR(50) NOT NULL DEFAULT 'petugas lapangan',
+            role ENUM('superadmin', 'admin', 'petugas lapangan') NOT NULL DEFAULT 'petugas lapangan',
             status_akun ENUM('aktif', 'nonaktif') NOT NULL DEFAULT 'aktif',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -156,7 +142,7 @@ def init_database():
             nama_encrypted TEXT NOT NULL,
             tanggal_lahir_encrypted TEXT,
             nomor_hp_encrypted TEXT,
-            rt VARCHAR(10) NOT NULL,
+            rt_encrypted TEXT NOT NULL,
             status ENUM('aktif','tidak_aktif') DEFAULT 'aktif',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -698,7 +684,7 @@ def create_warga(nik, nama, rt, created_by):
     nama_encrypted = encrypt_data(nama)
 
     query = """
-    INSERT INTO warga_penerima (nik_encrypted, nama_encrypted, rt, created_by)
+    INSERT INTO warga_penerima (nik_encrypted, nama_encrypted, rt_encrypted, created_by)
     VALUES (%s, %s, %s, %s)
     """
     cursor.execute(query, (nik_encrypted, nama_encrypted, rt, created_by))
