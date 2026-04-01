@@ -257,7 +257,7 @@ body {
 /* row admin */
 .dashboard-admin-row-three {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* 2 kotak sejajar */
+  grid-template-columns: repeat(3, 1fr);/* 2 kotak sejajar */
   gap: 24px;
   width: 100%;
   margin-top: 20px;

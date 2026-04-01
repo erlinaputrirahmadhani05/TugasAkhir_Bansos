@@ -151,10 +151,13 @@
               <!-- ================= ADMIN & SUPERADMIN ================= -->
               <div class="dashboard-admin-row dashboard-admin-row-three">
                 <div class="dashboard-stat-info">
-                  <p class="stat-info-label">Total Data Warga Terdaftar:</p>
-                  <p class="stat-info-value">{{ jumlah_warga|default(0) }} orang</p>
+                  <p class="stat-info-label">Total Data Warga Terdaftar Aktif:</p>
+                  <p class="stat-info-value">{{ jumlah_warga_aktif|default(0) }} orang</p>
                 </div>
-
+                <div class="dashboard-stat-info">
+                  <p class="stat-info-label">Total Data Warga Terdaftar Nonaktif:</p>
+                  <p class="stat-info-value">{{ jumlah_warga_nonaktif|default(0) }} orang</p>
+                </div>
                 <div class="dashboard-stat-info">
                   <p class="stat-info-label">Total Penerima Bantuan:</p>
                   <p class="stat-info-value">{{ jumlah_penyaluran|default(0) }} orang</p>

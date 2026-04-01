@@ -142,24 +142,32 @@ def logout():
 def dashboard():
     jumlah_warga = 0
     jumlah_penyaluran = 0
+    jumlah_warga_aktif = 0
+    jumlah_warga_nonaktif = 0
 
     try:
         role = session.get('role', '').lower()
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Semua role harus melihat jumlah warga
+        # TOTAL SEMUA WARGA
         cursor.execute("SELECT COUNT(*) FROM warga_penerima")
         jumlah_warga = cursor.fetchone()[0]
+
+        # TOTAL WARGA AKTIF
+        cursor.execute("SELECT COUNT(*) FROM warga_penerima WHERE status='aktif'")
+        jumlah_warga_aktif = cursor.fetchone()[0]
+
+        # TOTAL WARGA NONAKTIF
+        cursor.execute("SELECT COUNT(*) FROM warga_penerima WHERE status='tidak_aktif'")
+        jumlah_warga_nonaktif = cursor.fetchone()[0]
 
         if role == 'petugas lapangan':
             user_id = session.get('user_id')
             if user_id:
-                # Jumlah penyaluran yang diinput oleh petugas lapangan itu sendiri
                 cursor.execute("SELECT COUNT(*) FROM data_penerima WHERE input_by = %s", (user_id,))
                 jumlah_penyaluran = cursor.fetchone()[0]
         else:
-            # Untuk admin / superadmin: jumlah semua data penerima
             cursor.execute("SELECT COUNT(*) FROM data_penerima")
             jumlah_penyaluran = cursor.fetchone()[0]
 
@@ -172,9 +180,11 @@ def dashboard():
     return render_template(
         'dashboard.html',
         jumlah_warga=jumlah_warga,
-        jumlah_penyaluran=jumlah_penyaluran
+        jumlah_penyaluran=jumlah_penyaluran,
+        jumlah_warga_aktif=jumlah_warga_aktif,
+        jumlah_warga_nonaktif=jumlah_warga_nonaktif
     )
-    
+        
 @app.route('/kelola-akun')
 @require_login
 @require_superadmin
