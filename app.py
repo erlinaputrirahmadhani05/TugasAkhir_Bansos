@@ -802,7 +802,7 @@ def download_laporan():
 
                 worksheet.write(row_idx, 0, decrypt_data(warga["nama_encrypted"]), cell_center_format)
                 worksheet.write(row_idx, 1, decrypt_data(warga["nik_encrypted"]), cell_center_format)
-                worksheet.write(row_idx, 2, warga["rt_encrypted"], cell_center_format)
+                worksheet.write(row_idx, 2, decrypt_data(warga["rt_encrypted"]), cell_center_format)
                 worksheet.write(row_idx, 3, str(p["tanggal_terima"]), cell_center_format)
                 worksheet.write_blank(row_idx, 4, None, bukti_border_format)
 
