@@ -4,13 +4,14 @@
 <div class="page-content">
   <div class="content-card">
     <!-- Tombol Tambah -->
-    <div style="margin-bottom: 15px">
+    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center">
       <a href="{{ url_for('tambah_warga') }}" class="btn-submit"> + Tambah Warga </a>
+      <input type="text" id="searchInput" placeholder="Cari Warga..." class="search-input" />
     </div>
 
     <!-- TABEL DATA WARGA -->
     <div class="table-wrapper">
-      <table class="data-table">
+      <table class="data-table" id="wargaTable">
         <thead>
           <tr>
             <th>No</th>
@@ -29,18 +30,14 @@
             <td>{{ loop.index }}</td>
             <td>{{ w.nik }}</td>
             <td>{{ w.nama }}</td>
-            <td>{{ w.tanggal_lahir }}</td>
-            <td>{{ w.nomor_hp }}</td>
-            <td>{{ w.rt }}</td>
-            <td>
-              {% if w.status|lower == 'aktif' %}
-              <span style="color: green; font-weight: 600">Aktif</span>
-              {% else %}
-              <span style="color: red; font-weight: 600">Tidak Aktif</span>
-              {% endif %}
+            <td style="text-align: center">{{ w.tanggal_lahir }}</td>
+            <td style="text-align: center">{{ w.nomor_hp }}</td>
+            <td style="text-align: center">{{ w.rt }}</td>
+            <td style="text-align: center">
+              <span class="status-badge status-{{ w.status|lower }}"> {{ w.status }} </span>
             </td>
-            <td>
-              <div class="action-buttons" style="display: flex; gap: 5px">
+            <td class="text-center">
+              <div class="action-buttons" style="display: flex; justify-content: center; gap: 5px">
                 <!-- Tombol Edit -->
                 <a href="{{ url_for('edit_warga', id=w.id) }}" class="btn-edit" title="Edit">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
@@ -50,8 +47,8 @@
                 </a>
 
                 <!-- Tombol Hapus -->
-                <form method="POST" action="{{ url_for('hapus_warga', id=w.id) }}" style="display: inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus warga ini?');">
-                  <button type="submit" class="btn-delete" title="Hapus" style="background: none; border: none; padding: 0; cursor: pointer">
+                <form method="POST" action="{{ url_for('hapus_warga', id=w.id) }}" class="form-hapus">
+                  <button type="submit" class="btn-delete" title="Hapus">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
                       <polyline points="3 6 5 6 21 6"></polyline>
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -68,6 +65,28 @@
             <td colspan="8" style="text-align: center">Belum ada data warga</td>
           </tr>
           {% endfor %}
+          <script>
+            document.querySelectorAll(".form-hapus").forEach((form) => {
+              form.addEventListener("submit", function (e) {
+                e.preventDefault(); // stop submit dulu
+
+                Swal.fire({
+                  title: "Yakin hapus data?",
+                  text: "Data warga akan dihapus permanen!",
+                  icon: "warning",
+                  showCancelButton: true,
+                  confirmButtonColor: "#ef4444",
+                  cancelButtonColor: "#6b7280",
+                  confirmButtonText: "Ya, hapus!",
+                  cancelButtonText: "Batal",
+                }).then((result) => {
+                  if (result.isConfirmed) {
+                    form.submit(); // lanjut hapus
+                  }
+                });
+              });
+            });
+          </script>
         </tbody>
       </table>
     </div>

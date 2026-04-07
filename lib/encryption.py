@@ -37,8 +37,8 @@ def caesar_cipher(text, shift):
 
 def vigenere_cipher(text, key):
     hasil_enkripsi = ""
-    kunci_upper = key.upper()  # Ubah kunci menjadi huruf besar
-    indeks_kunci = 0  # Indeks untuk mengambil karakter dari kunci
+    kunci_upper = key.upper()  
+    indeks_kunci = 0  
 
     for karakter in text:
         if karakter.isalpha():
@@ -55,7 +55,7 @@ def vigenere_cipher(text, key):
             karakter_baru = chr(posisi_baru + ord(basis))
             hasil_enkripsi += karakter_baru
             
-            indeks_kunci += 1  # Pindah ke karakter kunci berikutnya
+            indeks_kunci += 1  
         
         elif karakter.isdigit():
             karakter_kunci = kunci_upper[indeks_kunci % len(kunci_upper)]
@@ -65,7 +65,7 @@ def vigenere_cipher(text, key):
             angka_baru = (angka_awal + nilai_shift) % 10
             hasil_enkripsi += str(angka_baru)
             
-            indeks_kunci += 1  # Pindah ke karakter kunci berikutnya
+            indeks_kunci += 1 
         
         else:
             hasil_enkripsi += karakter
@@ -77,7 +77,7 @@ def rc4_encrypt(data, key):
 
     kunci_bytes = key.encode()
 
-    j = 0  # ✅ WAJIB ADA (INI YANG KEMARIN HILANG)
+    j = 0  
 
     # --- KSA (Key Scheduling Algorithm) ---
     for i in range(256):

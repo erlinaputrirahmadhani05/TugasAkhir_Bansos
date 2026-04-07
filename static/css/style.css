@@ -325,3 +325,43 @@
   font-weight: bold;
   margin-left: 3px;
 }
+
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-aktif {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-nonaktif,
+.status-tidak_aktif {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.search-input {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 2px solid #2196F3; /* biru */
+  width: 280px;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+/* efek saat klik */
+.search-input:focus {
+  outline: none;
+  border-color: #1976D2;
+  box-shadow: 0 0 6px rgba(33, 150, 243, 0.4);
+}
+
+/* placeholder lebih halus */
+.search-input::placeholder {
+  color: #888;
+}
