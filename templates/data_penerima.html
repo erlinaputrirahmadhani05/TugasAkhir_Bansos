@@ -1,25 +1,24 @@
-{% extends "dashboard.html" %}
-
-{% block page_title %}Data Penerima{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-{% endblock %}
-
-{% block content %}
+{% extends "dashboard.html" %} {% block page_title %}Data Penerima{% endblock %} {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+{% endblock %} {% block content %}
 <div class="page-content">
   <div class="content-card">
-
     <!-- Tombol hanya muncul untuk superadmin -->
     {% if session.role|lower == 'superadmin' %}
-    <div style="margin-bottom:15px;">
-      <a href="{{ url_for('download_laporan') }}" class="btn-download">
-        Download Laporan Excel
-      </a>
+    <div style="margin-bottom: 15px">
+      <a href="{{ url_for('download_laporan') }}" class="btn-download"> Download Laporan Excel </a>
     </div>
     {% endif %}
 
     <div class="table-wrapper">
+      <table class="data-table" id="penerimaTable">
+      <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center">
+        {% if session.role|lower == 'superadmin' %}
+        <a href="{{ url_for('download_laporan') }}" class="btn-download"> Download Laporan Excel </a>
+        {% endif %}
+
+        <input type="text" id="searchPenerima" placeholder="Cari Data Penerima..." class="search-input" />
+      </div>
       <table class="data-table">
         <thead>
           <tr>
@@ -43,15 +42,25 @@
             <td>{{ d.tahap or '-' }}</td>
             <td>
               {% if d.bukti %}
-              <img src="{{ url_for('static', filename='uploads/' + d.bukti) }}" class="bukti-img">
+              <img src="{{ url_for('static', filename='uploads/' + d.bukti) }}" class="bukti-img" />
               {% else %} - {% endif %}
             </td>
           </tr>
           {% endfor %}
+          <script>
+            document.getElementById("searchPenerima").addEventListener("keyup", function () {
+              let filter = this.value.toLowerCase();
+              let rows = document.querySelectorAll("#penerimaTable tbody tr");
+
+              rows.forEach((row) => {
+                let text = row.innerText.toLowerCase();
+                row.style.display = text.includes(filter) ? "" : "none";
+              });
+            });
+          </script>
         </tbody>
       </table>
     </div>
-
   </div>
 </div>
 {% endblock %}
