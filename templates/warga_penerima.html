@@ -20,6 +20,7 @@
             <th>Tanggal Lahir</th>
             <th>No HP</th>
             <th>RT</th>
+            <th>Petugas</th>
             <th>Status</th>
             <th>Aksi</th>
           </tr>
@@ -33,6 +34,7 @@
             <td style="text-align: center">{{ w.tanggal_lahir }}</td>
             <td style="text-align: center">{{ w.nomor_hp }}</td>
             <td style="text-align: center">{{ w.rt }}</td>
+            <td style="text-align: center">{{ w.nama_petugas or '-' }}</td>
             <td style="text-align: center">
               <span class="status-badge status-{{ w.status|lower }}"> {{ w.status }} </span>
             </td>

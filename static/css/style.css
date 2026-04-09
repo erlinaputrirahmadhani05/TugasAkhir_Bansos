@@ -365,3 +365,72 @@
 .search-input::placeholder {
   color: #888;
 }
+
+/* FIX tombol action biar tidak melebar */
+.action-buttons form {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+}
+
+.action-buttons button {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    background: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+/* STYLE UTAMA BUTTON AKSI */
+.btn-edit,
+.btn-delete {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+/* WARNA EDIT */
+.btn-edit {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+/* HOVER EDIT */
+.btn-edit:hover {
+    background-color: #3b82f6;
+    color: white;
+}
+
+/* WARNA DELETE */
+.btn-delete {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* HOVER DELETE */
+.btn-delete:hover {
+    background-color: #ef4444;
+    color: white;
+}
+
+/* SVG BIAR IKUT SIZE */
+.btn-edit svg,
+.btn-delete svg {
+    width: 18px;
+    height: 18px;
+}
