@@ -88,6 +88,29 @@
                 });
               });
             });
+
+            document.addEventListener("DOMContentLoaded", function () {
+              const searchInput = document.getElementById("searchInput");
+
+              if (searchInput) {
+                searchInput.addEventListener("keyup", function () {
+                  let filter = this.value.toLowerCase();
+                  let rows = document.querySelectorAll("#wargaTable tbody tr");
+
+                  rows.forEach((row) => {
+                    let nik = row.cells[1].innerText.toLowerCase();
+                    let nama = row.cells[2].innerText.toLowerCase();
+                    let tgl = row.cells[3].innerText.toLowerCase();
+                    let hp = row.cells[4].innerText.toLowerCase();
+                    let rt = row.cells[5].innerText.toLowerCase();
+
+                    let match = nik.includes(filter) || nama.includes(filter) || tgl.includes(filter) || hp.includes(filter) || rt.includes(filter);
+
+                    row.style.display = match ? "" : "none";
+                  });
+                });
+              }
+            });
           </script>
         </tbody>
       </table>

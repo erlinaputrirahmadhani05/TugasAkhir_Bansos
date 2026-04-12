@@ -30,7 +30,7 @@ from lib.utils import save_uploaded_file
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads", "bukti_terima")
+UPLOAD_FOLDER = os.path.join(app.root_path, "private_uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -580,23 +580,28 @@ def data_penerima():
     if role == 'petugas lapangan':
         # Hanya data yang diinput oleh petugas ini
         cursor.execute("""
-            SELECT p.id, p.tanggal_terima, p.tahap, p.tahun, p.bukti_terima_path AS bukti,
-                   w.nama_encrypted, w.nik_encrypted, w.rt_encrypted
+            SELECT p.id, p.tanggal_terima, p.tahap, p.tahun, 
+                p.bukti_terima_path AS bukti,
+                w.nama_encrypted, w.nik_encrypted, w.rt_encrypted,
+                u.nama_lengkap AS petugas_lapangan
             FROM data_penerima p
             JOIN warga_penerima w ON p.warga_id = w.id
+            LEFT JOIN users u ON p.input_by = u.id
             WHERE p.input_by = %s
             ORDER BY p.tanggal_terima DESC
         """, (user_id,))
     else:
         # Admin / superadmin: semua data
         cursor.execute("""
-            SELECT p.id, p.tanggal_terima, p.tahap, p.tahun, p.bukti_terima_path AS bukti,
-                   w.nama_encrypted, w.nik_encrypted, w.rt_encrypted
+            SELECT p.id, p.tanggal_terima, p.tahap, p.tahun, 
+                p.bukti_terima_path AS bukti,
+                w.nama_encrypted, w.nik_encrypted, w.rt_encrypted,
+                u.nama_lengkap AS petugas_lapangan
             FROM data_penerima p
             JOIN warga_penerima w ON p.warga_id = w.id
+            LEFT JOIN users u ON p.input_by = u.id
             ORDER BY p.tanggal_terima DESC
         """)
-
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -609,10 +614,11 @@ def data_penerima():
             "nama": decrypt_data(r["nama_encrypted"]),
             "nik": decrypt_data(r["nik_encrypted"]),
             "rt": decrypt_data(r["rt_encrypted"]),
+            "petugas_lapangan": r["petugas_lapangan"],
             "tanggal_terima": r["tanggal_terima"].strftime("%Y-%m-%d") if r["tanggal_terima"] else "",
             "tahap": r["tahap"],
             "tahun": r["tahun"],
-            "bukti": r["bukti"]
+            "bukti": r["bukti"] if r["bukti"] else None
         })
 
     return render_template('data_penerima.html', data=data)
@@ -633,9 +639,9 @@ def input_data_penerima():
     cursor.execute("""
         SELECT id, nama_encrypted, rt_encrypted
         FROM warga_penerima
-        WHERE status='Aktif'
+        WHERE status = 'aktif' AND petugas_id = %s
         ORDER BY nama_encrypted
-    """)
+    """, (user_id,))
     warga_list = cursor.fetchall()
 
     # Dekripsi nama supaya template tidak error
@@ -643,21 +649,37 @@ def input_data_penerima():
         w['nama'] = decrypt_data(w['nama_encrypted'])
         w['rt'] = decrypt_data(w['rt_encrypted'])
 
-    current_year = datetime.now().year  # Kirim ke template
+    current_year = datetime.now().year
+    cursor.execute("SELECT nama_lengkap FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+
+    nama_petugas = user["nama_lengkap"] if user else "-"
 
     if request.method == 'POST':
         try:
             warga_id = request.form.get('warga_id')
             tahun = request.form.get('tahun')
-            tahap = request.form.get('tahap')  # Tetap string
+            tahap = request.form.get('tahap') 
             tanggal_terima = request.form.get('tanggal_terima')
             file = request.files.get('bukti_terima')
 
             filename = None
             if file:
                 filename = f"{int(time.time())}_{file.filename}"
-                file.save(f"static/uploads/{filename}")
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
+            cursor.execute("""
+                SELECT id FROM data_penerima 
+                WHERE warga_id = %s AND tahun = %s AND tahap = %s
+            """, (warga_id, tahun, tahap))
+
+            existing = cursor.fetchone()
+
+            if existing:
+                flash("Data sudah pernah diinput untuk warga, tahun, dan tahap ini!", "warning")
+                return redirect(url_for('input_data_penerima'))
+               
+            
             # INSERT ke data_penerima
             cursor.execute("""
                 INSERT INTO data_penerima
@@ -675,7 +697,18 @@ def input_data_penerima():
 
     cursor.close()
     conn.close()
-    return render_template('input_data_penerima.html', warga_list=warga_list, current_year=current_year)
+    return render_template(
+        'input_data_penerima.html',
+        warga_list=warga_list,
+        current_year=current_year,
+        nama_petugas=nama_petugas,
+        user_id=user_id
+    )
+    
+@app.route('/bukti/<filename>')
+@require_login
+def get_bukti(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/data-penerima/evaluasi')
 @require_login

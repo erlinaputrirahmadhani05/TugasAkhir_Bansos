@@ -3,12 +3,22 @@
 {% endblock %} {% block content %}
 <div class="page-content">
   <div class="content-card">
-    {% if session.role|lower == 'superadmin' %}
-    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center">
-      <a href="{{ url_for('download_laporan') }}" class="btn-download">Download Laporan Excel</a>
+    <div style="margin-bottom: 15px; display: flex; align-items: center">
+      {% if session.role|lower == 'superadmin' %}
+      <!-- SUPERADMIN -->
+      <div style="display: flex; justify-content: space-between; width: 100%">
+        <!-- KIRI -->
+        <a href="{{ url_for('download_laporan') }}" class="btn-download"> Download Laporan Excel </a>
+
+        <!-- KANAN -->
+        <input type="text" id="searchPenerima" placeholder="Cari Data Penerima..." class="search-input" />
+      </div>
+
+      {% else %}
+      <!-- ADMIN & PETUGAS -->
       <input type="text" id="searchPenerima" placeholder="Cari Data Penerima..." class="search-input" />
+      {% endif %}
     </div>
-    {% endif %}
 
     <div class="table-wrapper">
       <table class="data-table" id="penerimaTable">
@@ -30,13 +40,13 @@
             <td>{{ loop.index }}</td>
             <td>{{ d.nama }}</td>
             <td>{{ d.nik }}</td>
-            <td>{{ d.rt }}</td>
-            <td>{{ d.petugas lapangan }}</td>
-            <td>{{ d.tanggal_terima or '-' }}</td>
-            <td>{{ d.tahap or '-' }}</td>
-            <td>
+            <td style="text-align: center">{{ d.rt }}</td>
+            <td style="text-align: center">{{ d.petugas_lapangan }}</td>
+            <td style="text-align: center">{{ d.tanggal_terima or '-' }}</td>
+            <td style="text-align: center">{{ d.tahap or '-' }}</td>
+            <td style="text-align: center">
               {% if d.bukti %}
-              <img src="{{ url_for('static', filename='uploads/' + d.bukti) }}" class="bukti-img" />
+              <a href="javascript:void(0)" class="lihat-bukti" data-img="{{ url_for('get_bukti', filename=d.bukti) }}"> Lihat Bukti </a>
               {% else %} - {% endif %}
             </td>
           </tr>
@@ -50,12 +60,20 @@
     </div>
   </div>
 </div>
+<div id="imageModal" class="modal">
+  <div class="modal-box">
+    <img class="modal-content" id="imgPreview" />
+    <div class="modal-actions">
+      <a id="downloadBtn" href="#" download class="btn-unduh">Unduh</a>
+      <button id="closeBtn" class="btn-batal">Batal</button>
+    </div>
+  </div>
+</div>
 
-<!-- 🔥 SCRIPT HARUS DI DALAM BLOCK -->
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    // ================= SEARCH =================
     const searchInput = document.getElementById("searchPenerima");
-
     if (searchInput) {
       searchInput.addEventListener("keyup", function () {
         let filter = this.value.toLowerCase();
@@ -67,11 +85,44 @@
           let rt = row.cells[3].innerText.toLowerCase();
 
           let match = nama.includes(filter) || nik.includes(filter) || rt.includes(filter);
-
           row.style.display = match ? "" : "none";
         });
       });
     }
+
+    // ================= MODAL =================
+    const modal = document.getElementById("imageModal");
+    const modalImg = document.getElementById("imgPreview");
+    const closeBtn = document.getElementById("closeBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    console.log("JS jalan");
+
+    document.querySelectorAll(".lihat-bukti").forEach((link) => {
+      link.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        const imgSrc = this.getAttribute("data-img");
+
+        console.log("klik:", imgSrc);
+
+        modal.style.display = "flex";
+        modalImg.src = imgSrc;
+        downloadBtn.href = imgSrc;
+      });
+    });
+
+    // tombol batal
+    closeBtn.onclick = function () {
+      modal.style.display = "none";
+    };
+
+    // klik luar modal
+    modal.onclick = function (e) {
+      if (e.target === modal) {
+        modal.style.display = "none";
+      }
+    };
   });
 </script>
 

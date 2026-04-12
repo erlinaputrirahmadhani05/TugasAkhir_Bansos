@@ -38,8 +38,8 @@
             <select name="petugas_id">
               {% for p in petugas %}
               <option value="{{ p.id }}" {% if warga and warga.petugas_id == p.id %}selected{% endif %}>
-  {{ p.nama_lengkap }}
-</option>
+                {{ p.nama_lengkap }}
+              </option>
               {% endfor %}
             </select>
           </div>

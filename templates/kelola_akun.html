@@ -1,96 +1,112 @@
-{% extends "dashboard.html" %}
-
-{% block page_title %}Kelola Akun{% endblock %}
-{% block breadcrumb %}{% endblock %}
-
-{% block content %}
+{% extends "dashboard.html" %} {% block page_title %}Kelola Akun{% endblock %} {% block breadcrumb %}{% endblock %} {% block content %}
 <div class="page-content">
-    <div class="content-card">
-        <div class="card-header">
-            <a href="{{ url_for('tambah_akun') }}" class="btn-primary"> + Tambah Akun</a>
-        </div>
-        
-        <div class="table-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Nama Lengkap</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if users %}
-                        {% for user in users %}
-                        <tr>
-                            <td>{{ loop.index }}</td>
-                            <td>{{ user.nama_lengkap }}</td>
-                            <td>{{ user.username }}</td>
-                            <td>{{ user.email }}</td>
-                            <td>{{ user.role }}</td>
-                            <td>
-                                <span class="status-badge status-{{ user.status_akun }}">
-                                    {{ user.status_akun }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <a href="{{ url_for('edit_akun', user_id=user.id) }}" class="btn-edit" title="Edit">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                        </svg>
-                                    </a>
-                                    {% if session.get('user_id') != user.id %}
-                                    <form method="POST" action="{{ url_for('hapus_akun', user_id=user.id) }}" class="form-hapus">
-                                        <button type="submit" class="btn-delete" title="Hapus">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                <line x1="10" y1="11" x2="10" y2="17"></line>
-                                                <line x1="14" y1="11" x2="14" y2="17"></line>
-                                            </svg>
-                                        </button>
-                                    </form>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="7" class="text-center">Tidak ada data user</td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
+  <div class="content-card">
+    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center">
+      <a href="{{ url_for('tambah_akun') }}" class="btn-primary"> + Tambah Akun</a>
+
+      <input type="text" id="searchUser" placeholder="Cari user..." class="search-input" />
     </div>
+
+    <div class="table-container">
+      <table class="data-table" id="userTable">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Nama Lengkap</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if users %} {% for user in users %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ user.nama_lengkap }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.role }}</td>
+            <td>
+              <span class="status-badge status-{{ user.status_akun }}"> {{ user.status_akun }} </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <a href="{{ url_for('edit_akun', user_id=user.id) }}" class="btn-edit" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </a>
+                {% if session.get('user_id') != user.id %}
+                <form method="POST" action="{{ url_for('hapus_akun', user_id=user.id) }}" class="form-hapus">
+                  <button type="submit" class="btn-delete" title="Hapus">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %} {% else %}
+          <tr>
+            <td colspan="7" class="text-center">Tidak ada data user</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 <script>
-document.querySelectorAll(".form-hapus").forEach((form) => {
+  document.querySelectorAll(".form-hapus").forEach((form) => {
     form.addEventListener("submit", function (e) {
-        e.preventDefault();
+      e.preventDefault();
 
-        Swal.fire({
-            title: "Yakin hapus data?",
-            text: "Data user akan dihapus permanen!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#ef4444",
-            cancelButtonColor: "#6b7280",
-            confirmButtonText: "Ya, hapus!",
-            cancelButtonText: "Batal",
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
+      Swal.fire({
+        title: "Yakin hapus data?",
+        text: "Data user akan dihapus permanen!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Ya, hapus!",
+        cancelButtonText: "Batal",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          form.submit();
+        }
+      });
     });
-});
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // ================= SEARCH =================
+    const searchInput = document.getElementById("searchUser");
+
+    if (searchInput) {
+      searchInput.addEventListener("keyup", function () {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll("#userTable tbody tr");
+
+        rows.forEach((row) => {
+          let nama = row.cells[1].innerText.toLowerCase();
+          let username = row.cells[2].innerText.toLowerCase();
+          let email = row.cells[3].innerText.toLowerCase();
+          let role = row.cells[4].innerText.toLowerCase();
+
+          let match = nama.includes(filter) || username.includes(filter) || email.includes(filter) || role.includes(filter);
+
+          row.style.display = match ? "" : "none";
+        });
+      });
+    }
+  });
 </script>
 {% endblock %}
