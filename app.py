@@ -588,7 +588,7 @@ def data_penerima():
             JOIN warga_penerima w ON p.warga_id = w.id
             LEFT JOIN users u ON p.input_by = u.id
             WHERE p.input_by = %s
-            ORDER BY p.tanggal_terima DESC
+            ORDER BY p.tahap ASC, p.tanggal_terima DESC
         """, (user_id,))
     else:
         # Admin / superadmin: semua data
@@ -600,16 +600,19 @@ def data_penerima():
             FROM data_penerima p
             JOIN warga_penerima w ON p.warga_id = w.id
             LEFT JOIN users u ON p.input_by = u.id
-            ORDER BY p.tanggal_terima DESC
+            ORDER BY p.tahap ASC, p.tanggal_terima DESC
         """)
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
 
     # Decrypt nama & NIK
-    data = []
+    grouped_data = {}
+
     for r in rows:
-        data.append({
+        tahap = r["tahap"] or "Tidak ada tahap"
+
+        item = {
             "id": r["id"],
             "nama": decrypt_data(r["nama_encrypted"]),
             "nik": decrypt_data(r["nik_encrypted"]),
@@ -619,9 +622,15 @@ def data_penerima():
             "tahap": r["tahap"],
             "tahun": r["tahun"],
             "bukti": r["bukti"] if r["bukti"] else None
-        })
+        }
 
-    return render_template('data_penerima.html', data=data)
+        if tahap not in grouped_data:
+            grouped_data[tahap] = []
+
+        grouped_data[tahap].append(item)
+        grouped_data = dict(sorted(grouped_data.items()))
+
+    return render_template('data_penerima.html', grouped_data=grouped_data)
 
 @app.route('/data-penerima/input', methods=['GET', 'POST'])
 @require_login

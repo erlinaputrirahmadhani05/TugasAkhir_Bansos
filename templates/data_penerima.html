@@ -35,27 +35,44 @@
           </tr>
         </thead>
         <tbody>
-          {% if data %} {% for d in data %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ d.nama }}</td>
-            <td>{{ d.nik }}</td>
-            <td style="text-align: center">{{ d.rt }}</td>
-            <td style="text-align: center">{{ d.petugas_lapangan }}</td>
-            <td style="text-align: center">{{ d.tanggal_terima or '-' }}</td>
-            <td style="text-align: center">{{ d.tahap or '-' }}</td>
-            <td style="text-align: center">
-              {% if d.bukti %}
-              <a href="javascript:void(0)" class="lihat-bukti" data-img="{{ url_for('get_bukti', filename=d.bukti) }}"> Lihat Bukti </a>
-              {% else %} - {% endif %}
-            </td>
-          </tr>
-          {% endfor %} {% else %}
-          <tr>
-            <td colspan="7" class="text-center">Belum ada data penerima</td>
-          </tr>
-          {% endif %}
-        </tbody>
+  {% if grouped_data %}
+    
+    {% for tahap, items in grouped_data.items() %}
+    
+    <!-- HEADER TAHAP -->
+    <tr>
+      <td colspan="8" style="background:#eee; font-weight:bold; text-align:center;">
+        Tahap {{ tahap }}
+      </td>
+    </tr>
+
+    {% for d in items %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ d.nama }}</td>
+      <td>{{ d.nik }}</td>
+      <td style="text-align: center">{{ d.rt }}</td>
+      <td style="text-align: center">{{ d.petugas_lapangan }}</td>
+      <td style="text-align: center">{{ d.tanggal_terima or '-' }}</td>
+      <td style="text-align: center">{{ d.tahap or '-' }}</td>
+      <td style="text-align: center">
+        {% if d.bukti %}
+        <a href="javascript:void(0)" class="lihat-bukti" data-img="{{ url_for('get_bukti', filename=d.bukti) }}">
+          Lihat Bukti
+        </a>
+        {% else %} - {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+
+    {% endfor %}
+
+  {% else %}
+  <tr>
+    <td colspan="8" class="text-center">Belum ada data penerima</td>
+  </tr>
+  {% endif %}
+</tbody>
       </table>
     </div>
   </div>
@@ -80,13 +97,16 @@
         let rows = document.querySelectorAll("#penerimaTable tbody tr");
 
         rows.forEach((row) => {
-          let nama = row.cells[1].innerText.toLowerCase();
-          let nik = row.cells[2].innerText.toLowerCase();
-          let rt = row.cells[3].innerText.toLowerCase();
+  // CEK apakah ini baris data (bukan header tahap)
+  if (row.cells.length < 8) return;
 
-          let match = nama.includes(filter) || nik.includes(filter) || rt.includes(filter);
-          row.style.display = match ? "" : "none";
-        });
+  let nama = row.cells[1].innerText.toLowerCase();
+  let nik = row.cells[2].innerText.toLowerCase();
+  let rt = row.cells[3].innerText.toLowerCase();
+
+  let match = nama.includes(filter) || nik.includes(filter) || rt.includes(filter);
+  row.style.display = match ? "" : "none";
+});
       });
     }
 
