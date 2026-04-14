@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Beranda - SI BANSOS</title>
 
-    <!-- style global -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-
-    <!-- style khusus dashboard -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body class="dashboard-page">
     <div class="dashboard-container">
@@ -23,17 +21,17 @@
         </svg>
       </button>
       <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
       <!-- Sidebar -->
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-          <img src="{{ url_for('static', filename='images/logo_kab.png') }}" alt="Logo Kabupaten" class="sidebar-logo">
+          <img src="{{ url_for('static', filename='images/logo_kab.png') }}" alt="Logo Kabupaten" class="sidebar-logo" />
           <h2>Desa Ngengor</h2>
         </div>
 
         <nav class="sidebar-nav">
           <ul class="nav-menu">
             {% if session.get('role', '').lower() == 'petugas lapangan' %}
-            <!-- Menu untuk Petugas Lapangan -->
             <li>
               <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -55,7 +53,6 @@
               </a>
             </li>
             {% else %}
-            <!-- Menu untuk Admin/Superadmin -->
             <li>
               <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -73,7 +70,6 @@
                   <circle cx="12" cy="7" r="4"></circle>
                 </svg>
                 <span>Kelola Akun</span>
-                
               </a>
             </li>
             {% endif %} {% endif %} {% if session.get('role', '').lower() == 'admin' %}
@@ -126,7 +122,6 @@
         </header>
 
         <div class="content-body">
-          <!-- Flash messages -->
           {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %}
           <div class="flash-messages">
             {% for category, message in messages %}
@@ -139,29 +134,40 @@
               <h2>Selamat Datang di Sistem Informasi Kelola Data Penerima Bantuan Sosial Program Keluarga Harapan</h2>
               <p>Desa Ngengor</p>
             </div>
+
             <div class="stats-grid stats-grid-admin">
               {% if session.get('role', '').lower() == 'petugas lapangan' %}
               <!-- ================= PETUGAS LAPANGAN ================= -->
               <div class="dashboard-admin-row">
-                <div class="dashboard-stat-info">
-                  <p class="stat-info-label">Jumlah penerima bantuan yang sudah Anda input:</p>
-                  <p class="stat-info-value">{{ jumlah_penyaluran|default(0) }} data</p>
-                </div>
+  <div class="dashboard-stat-card">
+    <p class="stat-info-label">Data yang Anda Input per Bulan</p>
+    <p class="stat-info-value">{{ jumlah_penyaluran|default(0) }} <small>data</small></p>
+    <canvas id="chartPetugas"></canvas>
+  </div>
+</div>
 
               {% else %}
               <!-- ================= ADMIN & SUPERADMIN ================= -->
               <div class="dashboard-admin-row dashboard-admin-row-three">
-                <div class="dashboard-stat-info">
-                  <p class="stat-info-label">Total Data Warga Terdaftar Aktif:</p>
-                  <p class="stat-info-value">{{ jumlah_warga_aktif|default(0) }} orang</p>
+                <!-- Kartu 1: Warga Aktif -->
+                <div class="dashboard-stat-card">
+                  <p class="stat-info-label">Total Warga Terdaftar Aktif</p>
+                  <p class="stat-info-value stat-aktif">{{ jumlah_warga_aktif|default(0) }} <small style="font-size: 14px; font-weight: 400">orang</small></p>
+                  <canvas id="chartAktif"></canvas>
                 </div>
-                <div class="dashboard-stat-info">
-                  <p class="stat-info-label">Total Data Warga Terdaftar Nonaktif:</p>
-                  <p class="stat-info-value">{{ jumlah_warga_nonaktif|default(0) }} orang</p>
+
+                <!-- Kartu 2: Warga Nonaktif -->
+                <div class="dashboard-stat-card">
+                  <p class="stat-info-label">Total Warga Terdaftar Nonaktif</p>
+                  <p class="stat-info-value stat-nonaktif">{{ jumlah_warga_nonaktif|default(0) }} <small style="font-size: 14px; font-weight: 400">orang</small></p>
+                  <canvas id="chartNonaktif"></canvas>
                 </div>
-                <div class="dashboard-stat-info">
-                  <p class="stat-info-label">Total Penerima Bantuan:</p>
-                  <p class="stat-info-value">{{ jumlah_penyaluran|default(0) }} orang</p>
+
+                <!-- Kartu 3: Penerima Bantuan -->
+                <div class="dashboard-stat-card">
+                  <p class="stat-info-label">Total Penerima Bantuan</p>
+                  <p class="stat-info-value stat-penerima">{{ jumlah_penyaluran|default(0) }} <small style="font-size: 14px; font-weight: 400">orang</small></p>
+                  <canvas id="chartPenerima"></canvas>
                 </div>
               </div>
               {% endif %}
@@ -171,32 +177,80 @@
         </div>
       </main>
     </div>
+
     <script>
-      (function () {
-        var sidebar = document.getElementById("sidebar");
-        var toggle = document.getElementById("sidebarToggle");
-        var overlay = document.getElementById("sidebarOverlay");
-        if (!sidebar || !toggle || !overlay) return;
-        function openSidebar() {
-          sidebar.classList.add("sidebar-open");
-          overlay.classList.add("active");
-          document.body.classList.add("sidebar-open-body");
-          overlay.setAttribute("aria-hidden", "false");
-          toggle.setAttribute("aria-label", "Tutup menu");
-        }
-        function closeSidebar() {
-          sidebar.classList.remove("sidebar-open");
-          overlay.classList.remove("active");
-          document.body.classList.remove("sidebar-open-body");
-          overlay.setAttribute("aria-hidden", "true");
-          toggle.setAttribute("aria-label", "Buka menu");
-        }
-        toggle.addEventListener("click", function () {
-          if (sidebar.classList.contains("sidebar-open")) closeSidebar();
-          else openSidebar();
+            (function () {
+              var sidebar = document.getElementById("sidebar");
+              var toggle = document.getElementById("sidebarToggle");
+              var overlay = document.getElementById("sidebarOverlay");
+              if (!sidebar || !toggle || !overlay) return;
+              function openSidebar() {
+                sidebar.classList.add("sidebar-open");
+                overlay.classList.add("active");
+                document.body.classList.add("sidebar-open-body");
+                overlay.setAttribute("aria-hidden", "false");
+                toggle.setAttribute("aria-label", "Tutup menu");
+              }
+              function closeSidebar() {
+                sidebar.classList.remove("sidebar-open");
+                overlay.classList.remove("active");
+                document.body.classList.remove("sidebar-open-body");
+                overlay.setAttribute("aria-hidden", "true");
+                toggle.setAttribute("aria-label", "Buka menu");
+              }
+              toggle.addEventListener("click", function () {
+                if (sidebar.classList.contains("sidebar-open")) closeSidebar();
+                else openSidebar();
+              });
+              overlay.addEventListener("click", closeSidebar);
+            })();
+
+            document.addEventListener("DOMContentLoaded", function () {
+              var aktif    = {{ jumlah_warga_aktif|default(0) }};
+              var nonaktif = {{ jumlah_warga_nonaktif|default(0) }};
+              var penerima = {{ jumlah_penyaluran|default(0) }};
+
+              var dataBulanan = {{ data_per_bulan | default([0,0,0,0,0,0,0,0,0,0,0,0]) | tojson }};
+
+              var labels = [
+                "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+                "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+              ];
+
+              function makeLineChart(id, data, warna) {
+        var ctx = document.getElementById(id);
+        if (!ctx) return;
+
+        new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data,
+              borderColor: warna,
+              backgroundColor: warna + "22",
+              borderWidth: 2,
+              pointRadius: 3,
+              pointBackgroundColor: warna,
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            }
+          }
         });
-        overlay.addEventListener("click", closeSidebar);
-      })();
+      }
+
+      makeLineChart("chartAktif", dataBulanan, "#1D9E75");
+      makeLineChart("chartNonaktif", dataBulanan, "#E24B4A");
+      makeLineChart("chartPenerima", dataBulanan, "#378ADD");
+      makeLineChart("chartPetugas", dataBulanan, "#F59E0B");
+      });
     </script>
   </body>
 </html>

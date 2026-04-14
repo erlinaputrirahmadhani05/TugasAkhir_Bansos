@@ -990,3 +990,57 @@ button.btn-delete:hover {
     border-radius: 5px;
     }
     }
+
+    /* ===== Dashboard Cards (Admin) ===== */
+.dashboard-admin-row-three {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.dashboard-stat-card {
+  flex: 1;
+  min-width: 200px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-stat-card .stat-info-label {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+.dashboard-stat-card .stat-info-value {
+  font-size: 26px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.dashboard-stat-card canvas {
+  margin-top: 4px;
+}
+
+/* ===== Warna per kategori ===== */
+.stat-aktif {
+  color: #1D9E75;
+}
+
+.stat-nonaktif {
+  color: #E24B4A;
+}
+
+.stat-penerima {
+  color: #378ADD;
+}
+
+.dashboard-stat-card canvas {
+  width: 100% !important;
+  height: 120px !important; /* bisa kamu atur */
+}

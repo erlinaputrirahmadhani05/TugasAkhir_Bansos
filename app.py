@@ -149,6 +149,20 @@ def dashboard():
         role = session.get('role', '').lower()
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        data_per_bulan = [0] * 12  # Jan - Des
+        cursor.execute("""
+            SELECT MONTH(created_at) as bulan, COUNT(*) as jumlah
+            FROM data_penerima
+            GROUP BY MONTH(created_at)
+        """)
+        
+        hasil = cursor.fetchall()
+
+        for row in hasil:
+            bulan = row[0]
+            jumlah = row[1]
+            data_per_bulan[bulan - 1] = jumlah
 
         # TOTAL SEMUA WARGA
         cursor.execute("SELECT COUNT(*) FROM warga_penerima")
@@ -182,7 +196,8 @@ def dashboard():
         jumlah_warga=jumlah_warga,
         jumlah_penyaluran=jumlah_penyaluran,
         jumlah_warga_aktif=jumlah_warga_aktif,
-        jumlah_warga_nonaktif=jumlah_warga_nonaktif
+        jumlah_warga_nonaktif=jumlah_warga_nonaktif,
+        data_per_bulan=data_per_bulan
     )
         
 @app.route('/kelola-akun')
