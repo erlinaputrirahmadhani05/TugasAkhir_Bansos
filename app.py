@@ -9,6 +9,8 @@ from lib.database import (
 # koneksi database
 from config import DB_CONFIG
 import mysql.connector
+from PIL import Image
+
 
 # enkripsi dan dekripsi
 from lib.encryption import encrypt_data
@@ -865,7 +867,7 @@ def download_laporan():
             worksheet.set_column(1, 1, 22)
             worksheet.set_column(2, 2, 8)
             worksheet.set_column(3, 3, 18)
-            worksheet.set_column(4, 4, 30)
+            worksheet.set_column(4, 4, 40)
 
             # Header
             headers = ["Nama", "NIK", "RT", "Tanggal Terima", "Bukti"]
@@ -890,21 +892,40 @@ def download_laporan():
 
                 # ===== MASUKKAN GAMBAR =====
                 if p["bukti_terima_path"]:
-                    image_path = f"static/uploads/{p['bukti_terima_path']}"
+                    image_path = os.path.join(
+                        app.config['UPLOAD_FOLDER'],
+                        p['bukti_terima_path']
+                    )
 
                     if os.path.exists(image_path):
-                        worksheet.set_row(row_idx, 110)
+                        worksheet.set_row(row_idx, 120)  # tinggi row
+
+                        # Ambil ukuran gambar
+                        img = Image.open(image_path)
+                        img_width, img_height = img.size
+
+                        # Scale gambar
+                        scale = 0.4
+                        scaled_width = img_width * scale
+                        scaled_height = img_height * scale
+
+                        # Ukuran cell (approx Excel)
+                        cell_width = 220   # px (kolom 30 kira2 segini)
+                        cell_height = 120  # sama dengan set_row
+
+                        # Hitung posisi tengah
+                        x_offset = int((cell_width - scaled_width) / 2)
+                        y_offset = int((cell_height - scaled_height) / 2)
 
                         worksheet.insert_image(row_idx, 4, image_path, {
-                            'x_scale': 0.45,
-                            'y_scale': 0.45,
-
-                            # posisi tengah kolom
-                            'x_offset': 65,
-                            'y_offset': 15,
-
+                            'x_scale': scale,
+                            'y_scale': scale,
+                            'x_offset': x_offset,
+                            'y_offset': y_offset,
                             'object_position': 1
                         })
+                    else:
+                        print("Gambar tidak ditemukan:", image_path)
 
                 row_idx += 1
                 
