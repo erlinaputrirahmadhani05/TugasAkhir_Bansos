@@ -29,7 +29,6 @@ def get_db_connection():
         return None
     
     try:
-        # Coba menggunakan pymysql (PyMySQL)
         try:
             connection = pymysql.connect(
                 host=DB_CONFIG['host'],
@@ -40,7 +39,6 @@ def get_db_connection():
                 cursorclass=pymysql.cursors.DictCursor
             )
         except AttributeError:
-            # Jika menggunakan mysql-connector-python
             connection = pymysql.connect(
                 host=DB_CONFIG['host'],
                 user=DB_CONFIG['user'],
@@ -108,7 +106,6 @@ def init_database():
         cursor.execute(check_user_query)
         result = cursor.fetchone()
         
-        # Handle different cursor return types
         if use_dict and isinstance(result, dict):
             count = result.get('count', 0)
         elif isinstance(result, tuple):

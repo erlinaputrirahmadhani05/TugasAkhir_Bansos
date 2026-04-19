@@ -11,7 +11,6 @@ from config import DB_CONFIG
 import mysql.connector
 from PIL import Image
 
-
 # enkripsi dan dekripsi
 from lib.encryption import encrypt_data
 from lib.decryption import decrypt_data
@@ -416,88 +415,6 @@ def tambah_warga():
     conn.close()
 
     return render_template('tambah_warga.html', petugas=petugas)
-
-def simpan_warga(id=None):
-    warga = None
-
-    if id:
-        # Ambil data warga untuk edit
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM warga_penerima WHERE id=%s", (id,))
-        r = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        if r:
-            warga = {
-                "id": r["id"],
-                "nik": decrypt_data(r["nik_encrypted"]),
-                "nama": decrypt_data(r["nama_encrypted"]),
-                "tanggal_lahir": decrypt_data(r["tanggal_lahir_encrypted"]),
-                "nomor_hp": decrypt_data(r["nomor_hp_encrypted"]) if r["nomor_hp_encrypted"] else "",
-                "rt": decrypt_data(r["rt_encrypted"]),
-                "status": r["status"]
-            }
-        else:
-            flash("Data warga tidak ditemukan", "danger")
-            return redirect(url_for('warga_penerima'))
-
-    if request.method == 'POST':
-        try:
-            nik = request.form.get('nik')
-            nama = request.form.get('nama')
-            tanggal_lahir = request.form.get('tanggal_lahir')
-            nomor_hp = request.form.get('nomor_hp')
-            rt = request.form.get('rt')
-            status = request.form.get('status')
-            user_id = session.get('user_id')
-
-            nik_enc = encrypt_data(nik)
-            nama_enc = encrypt_data(nama)
-            tanggal_lahir_enc = encrypt_data(tanggal_lahir)
-            rt_enc = encrypt_data(rt)
-            nomor_hp_enc = encrypt_data(nomor_hp) if nomor_hp else None
-
-            conn = get_db_connection()
-            cursor = conn.cursor()
-
-            if id:
-                # UPDATE
-                query = """
-                    UPDATE warga_penerima
-                    SET nik_encrypted=%s,
-                        nama_encrypted=%s,
-                        tanggal_lahir_encrypted=%s,
-                        nomor_hp_encrypted=%s,
-                        rt_encrypted=%s,
-                        status=%s,
-                        updated_by=%s,
-                        updated_at=NOW()
-                    WHERE id=%s
-                """
-                cursor.execute(query, (nik_enc, nama_enc, tanggal_lahir_enc, nomor_hp_enc, rt_enc, status, user_id, id))
-                flash("Data warga berhasil diperbarui", "success")
-            else:
-                # INSERT
-                query = """
-                    INSERT INTO warga_penerima
-                    (nik_encrypted, nama_encrypted, tanggal_lahir_encrypted,
-                    nomor_hp_encrypted, rt, status, created_by)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s)
-                """
-                cursor.execute(query, (nik_enc, nama_enc, tanggal_lahir_enc, nomor_hp_enc, rt_enc, status, user_id))
-                flash("Data warga berhasil disimpan", "success")
-
-            conn.commit()
-            cursor.close()
-            conn.close()
-            return redirect(url_for('warga_penerima'))
-
-        except Exception as e:
-            traceback.print_exc()
-            flash(f"Gagal menyimpan data: {e}", "danger")
-
-    return render_template('tambah_warga.html', warga=warga)
 
 @app.route('/warga-penerima/edit/<int:id>', methods=['GET', 'POST'])
 @require_login
