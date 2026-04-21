@@ -49,7 +49,7 @@ def require_login(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'username' not in session:
+        if 'user_id' not in session:
             flash('Silakan login terlebih dahulu!', 'error')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
@@ -73,7 +73,7 @@ def index():
     """
     Redirect ke halaman login jika belum login
     """
-    if 'username' in session:
+    if 'user_id' in session:
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
@@ -104,7 +104,6 @@ def login():
                 if user['status_akun'] == 'aktif':
                     # Simpan data user ke session
                     session['user_id'] = user['id']
-                    session['username'] = user['username']
                     session['nama_lengkap'] = user['nama_lengkap']
                     session['email'] = user['email']
                     session['role'] = user['role']
@@ -124,7 +123,7 @@ def login():
             return render_template('login.html')
     
     # Jika sudah login, redirect ke dashboard
-    if 'username' in session:
+    if 'user_id' in session:
         return redirect(url_for('dashboard'))
     
     return render_template('login.html')
@@ -141,10 +140,10 @@ def logout():
 @app.route('/dashboard')
 @require_login
 def dashboard():
-    jumlah_warga = 0
-    jumlah_penyaluran = 0
     jumlah_warga_aktif = 0
     jumlah_warga_nonaktif = 0
+    jumlah_penyaluran = 0
+    jumlah_akun_aktif = 0   # ← Baru ditambahkan
 
     try:
         role = session.get('role', '').lower()
@@ -152,22 +151,20 @@ def dashboard():
         cursor = conn.cursor()
         
         data_per_bulan = [0] * 12  # Jan - Des
+
+        # Data per bulan untuk chart (jika masih digunakan)
         cursor.execute("""
             SELECT MONTH(created_at) as bulan, COUNT(*) as jumlah
             FROM data_penerima
             GROUP BY MONTH(created_at)
         """)
-        
         hasil = cursor.fetchall()
 
         for row in hasil:
             bulan = row[0]
             jumlah = row[1]
-            data_per_bulan[bulan - 1] = jumlah
-
-        # TOTAL SEMUA WARGA
-        cursor.execute("SELECT COUNT(*) FROM warga_penerima")
-        jumlah_warga = cursor.fetchone()[0]
+            if 1 <= bulan <= 12:
+                data_per_bulan[bulan - 1] = jumlah
 
         # TOTAL WARGA AKTIF
         cursor.execute("SELECT COUNT(*) FROM warga_penerima WHERE status='aktif'")
@@ -177,6 +174,7 @@ def dashboard():
         cursor.execute("SELECT COUNT(*) FROM warga_penerima WHERE status='tidak_aktif'")
         jumlah_warga_nonaktif = cursor.fetchone()[0]
 
+        # TOTAL PENERIMA BANTUAN
         if role == 'petugas lapangan':
             user_id = session.get('user_id')
             if user_id:
@@ -186,18 +184,24 @@ def dashboard():
             cursor.execute("SELECT COUNT(*) FROM data_penerima")
             jumlah_penyaluran = cursor.fetchone()[0]
 
+        # TOTAL AKUN TERDAFTAR AKTIF  ← Baru
+        cursor.execute("SELECT COUNT(*) FROM users WHERE status_akun = 'Aktif'")  # Sesuaikan nama tabel dan kolom jika berbeda
+        jumlah_akun_aktif = cursor.fetchone()[0]
+
         cursor.close()
         conn.close()
 
     except Exception as e:
         traceback.print_exc()
+        # Optional: flash message error
+        # flash('Terjadi kesalahan saat memuat dashboard', 'error')
 
     return render_template(
         'dashboard.html',
-        jumlah_warga=jumlah_warga,
-        jumlah_penyaluran=jumlah_penyaluran,
+        jumlah_akun_aktif=jumlah_akun_aktif,      # ← Ditambahkan
         jumlah_warga_aktif=jumlah_warga_aktif,
         jumlah_warga_nonaktif=jumlah_warga_nonaktif,
+        jumlah_penyaluran=jumlah_penyaluran,
         data_per_bulan=data_per_bulan
     )
         
@@ -226,19 +230,18 @@ def tambah_akun():
     if request.method == 'POST':
         try:
             nama_lengkap = request.form.get('nama_lengkap')
-            username = request.form.get('username')
             email = request.form.get('email')
             password = request.form.get('password')
             role = request.form.get('role', 'user')
             status_akun = request.form.get('status_akun', 'aktif')
             
             # Validasi
-            if not all([nama_lengkap, username, email, password]):
+            if not all([nama_lengkap, email, password]):
                 flash('Semua field harus diisi!', 'error')
                 return render_template('tambah_akun.html')
             
             # Buat user baru
-            create_user(nama_lengkap, username, password, email, role, status_akun)
+            create_user(nama_lengkap, password, email, role, status_akun)
             flash('User berhasil ditambahkan!', 'success')
             return redirect(url_for('kelola_akun'))
         except Exception as e:
@@ -257,20 +260,19 @@ def edit_akun(user_id):
     if request.method == 'POST':
         try:
             nama_lengkap = request.form.get('nama_lengkap')
-            username = request.form.get('username')
             email = request.form.get('email')
             password = request.form.get('password')
             role = request.form.get('role')
             status_akun = request.form.get('status_akun')
             
             # Validasi
-            if not all([nama_lengkap, username, email, role, status_akun]):
+            if not all([nama_lengkap, email, role, status_akun]):
                 flash('Semua field harus diisi!', 'error')
                 user = get_user_by_id(user_id)
                 return render_template('edit_akun.html', user=user)
             
             # Update user
-            update_user(user_id, nama_lengkap, username, email, role, status_akun, 
+            update_user(user_id, nama_lengkap, email, role, status_akun, 
                        password if password else None)
             flash('User berhasil diupdate!', 'success')
             return redirect(url_for('kelola_akun'))

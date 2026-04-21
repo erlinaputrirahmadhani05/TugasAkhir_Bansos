@@ -8,11 +8,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body class="dashboard-page">
     <div class="dashboard-container">
-      <!-- Tombol menu mobile -->
+      
+      <!-- Tombol Hamburger -->
       <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Buka menu">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -20,6 +20,7 @@
           <line x1="3" y1="18" x2="21" y2="18"></line>
         </svg>
       </button>
+
       <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
       <!-- Sidebar -->
@@ -72,7 +73,10 @@
                 <span>Kelola Akun</span>
               </a>
             </li>
-            {% endif %} {% endif %} {% if session.get('role', '').lower() == 'admin' %}
+            {% endif %} 
+            {% endif %} 
+
+            {% if session.get('role', '').lower() == 'admin' %}
             <li>
               <a href="{{ url_for('warga_penerima') }}" class="nav-item {% if request.endpoint == 'warga_penerima' %}active{% endif %}">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -84,6 +88,7 @@
               </a>
             </li>
             {% endif %}
+
             <li>
               <a href="{{ url_for('data_penerima') }}" class="nav-item {% if request.endpoint == 'data_penerima' %}active{% endif %}">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -97,8 +102,9 @@
             </li>
           </ul>
         </nav>
+
         <div class="sidebar-footer">
-          <a href="{{ url_for('logout') }}" class="nav-item logout">
+          <a href="#" id="logout-link" class="nav-item logout">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
               <polyline points="16 17 21 12 16 7"></polyline>
@@ -114,7 +120,7 @@
         <header class="content-header">
           <div class="header-left">
             <h1>{% block page_title %}Beranda{% endblock %}</h1>
-            {% block breadcrumb %} {% endblock %}
+            {% block breadcrumb %}{% endblock %}
           </div>
           <div class="header-right">
             <div class="welcome-text">Selamat datang, <strong>{{ session.get('nama_lengkap', session.get('username', 'User')) }}</strong></div>
@@ -122,55 +128,127 @@
         </header>
 
         <div class="content-body">
-          {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %}
+          {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
           <div class="flash-messages">
             {% for category, message in messages %}
             <div class="alert alert-{{ category }}">{{ message }}</div>
             {% endfor %}
           </div>
-          {% endif %} {% endwith %} {% block content %}
+          {% endif %}
+          {% endwith %}
+
+          {% block content %}
           <div class="dashboard-welcome">
             <div class="welcome-card">
               <h2>Selamat Datang di Sistem Informasi Kelola Data Penerima Bantuan Sosial Program Keluarga Harapan</h2>
               <p>Desa Ngengor</p>
             </div>
 
-            <div class="stats-grid stats-grid-admin">
-              {% if session.get('role', '').lower() == 'petugas lapangan' %}
+            <!-- ================= STATISTIK DASHBOARD ================= -->
+            <div class="dashboard-stats-row">
+
               <!-- ================= PETUGAS LAPANGAN ================= -->
-              <div class="dashboard-admin-row">
-  <div class="dashboard-stat-card">
-    <p class="stat-info-label">Data yang Anda Input per Bulan</p>
-    <p class="stat-info-value">{{ jumlah_penyaluran|default(0) }} <small>data</small></p>
-    <canvas id="chartPetugas"></canvas>
-  </div>
-</div>
-
-              {% else %}
-              <!-- ================= ADMIN & SUPERADMIN ================= -->
-              <div class="dashboard-admin-row dashboard-admin-row-three">
-                <!-- Kartu 1: Warga Aktif -->
-                <div class="dashboard-stat-card">
-                  <p class="stat-info-label">Total Warga Terdaftar Aktif</p>
-                  <p class="stat-info-value stat-aktif">{{ jumlah_warga_aktif|default(0) }} <small style="font-size: 14px; font-weight: 400">orang</small></p>
-                  <canvas id="chartAktif"></canvas>
+              {% if session.get('role', '').lower() == 'petugas lapangan' %}
+              <div class="dashboard-stat-card">
+                <div class="stat-icon">
+                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                  </svg>
                 </div>
+                <p class="stat-info-label">Total Penerima Bantuan yang Anda Input</p>
+                <p class="stat-info-value stat-penerima">{{ jumlah_penyaluran|default(0) }}</p>
+                <small>orang</small>
+              </div>
 
-                <!-- Kartu 2: Warga Nonaktif -->
-                <div class="dashboard-stat-card">
-                  <p class="stat-info-label">Total Warga Terdaftar Nonaktif</p>
-                  <p class="stat-info-value stat-nonaktif">{{ jumlah_warga_nonaktif|default(0) }} <small style="font-size: 14px; font-weight: 400">orang</small></p>
-                  <canvas id="chartNonaktif"></canvas>
+              <!-- ================= SUPERADMIN ================= -->
+              {% elif session.get('role', '').lower() == 'superadmin' %}
+              <!-- Card 1: Total Akun Aktif -->
+              <div class="dashboard-stat-card">
+                <div class="stat-icon">
+                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  </svg>
                 </div>
+                <p class="stat-info-label">Total Akun Terdaftar Aktif</p>
+                <p class="stat-info-value stat-aktif">{{ jumlah_akun_aktif|default(0) }}</p>
+                <small>akun</small>
+              </div>
 
-                <!-- Kartu 3: Penerima Bantuan -->
-                <div class="dashboard-stat-card">
-                  <p class="stat-info-label">Total Penerima Bantuan</p>
-                  <p class="stat-info-value stat-penerima">{{ jumlah_penyaluran|default(0) }} <small style="font-size: 14px; font-weight: 400">orang</small></p>
-                  <canvas id="chartPenerima"></canvas>
+              <!-- Card 2: Total Warga Aktif (Orange) -->
+              <div class="dashboard-stat-card">
+                <div class="stat-icon">
+                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                  </svg>
                 </div>
+                <p class="stat-info-label">Total Warga Terdaftar Aktif</p>
+                <p class="stat-info-value stat-orange">{{ jumlah_warga_aktif|default(0) }}</p>
+                <small>orang</small>
+              </div>
+
+              <!-- Card 3: Total Penerima Bantuan -->
+              <div class="dashboard-stat-card">
+                <div class="stat-icon">
+                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                  </svg>
+                </div>
+                <p class="stat-info-label">Total Penerima Bantuan</p>
+                <p class="stat-info-value stat-penerima">{{ jumlah_penyaluran|default(0) }}</p>
+                <small>orang</small>
+              </div>
+
+              <!-- ================= ADMIN ================= -->
+              {% elif session.get('role', '').lower() == 'admin' %}
+              <!-- Card 1: Total Warga Aktif (Orange) -->
+              <div class="dashboard-stat-card">
+                <div class="stat-icon">
+                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <p class="stat-info-label">Total Warga Terdaftar Aktif</p>
+                <p class="stat-info-value stat-orange">{{ jumlah_warga_aktif|default(0) }}</p>
+                <small>orang</small>
+              </div>
+
+              <!-- Card 2: Total Warga Nonaktif (Merah) -->
+              <div class="dashboard-stat-card">
+                <div class="stat-icon">
+                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <p class="stat-info-label">Total Warga Terdaftar Nonaktif</p>
+                <p class="stat-info-value stat-nonaktif">{{ jumlah_warga_nonaktif|default(0) }}</p>
+                <small>orang</small>
+              </div>
+
+              <!-- Card 3: Total Penerima Bantuan -->
+              <div class="dashboard-stat-card">
+                <div class="stat-icon">
+                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                  </svg>
+                </div>
+                <p class="stat-info-label">Total Penerima Bantuan</p>
+                <p class="stat-info-value stat-penerima">{{ jumlah_penyaluran|default(0) }}</p>
+                <small>orang</small>
               </div>
               {% endif %}
+
             </div>
           </div>
           {% endblock %}
@@ -179,77 +257,64 @@
     </div>
 
     <script>
-            (function () {
-              var sidebar = document.getElementById("sidebar");
-              var toggle = document.getElementById("sidebarToggle");
-              var overlay = document.getElementById("sidebarOverlay");
-              if (!sidebar || !toggle || !overlay) return;
-              function openSidebar() {
-                sidebar.classList.add("sidebar-open");
-                overlay.classList.add("active");
-                document.body.classList.add("sidebar-open-body");
-                overlay.setAttribute("aria-hidden", "false");
-                toggle.setAttribute("aria-label", "Tutup menu");
-              }
-              function closeSidebar() {
-                sidebar.classList.remove("sidebar-open");
-                overlay.classList.remove("active");
-                document.body.classList.remove("sidebar-open-body");
-                overlay.setAttribute("aria-hidden", "true");
-                toggle.setAttribute("aria-label", "Buka menu");
-              }
-              toggle.addEventListener("click", function () {
-                if (sidebar.classList.contains("sidebar-open")) closeSidebar();
-                else openSidebar();
-              });
-              overlay.addEventListener("click", closeSidebar);
-            })();
+      // Script Sidebar Toggle
+      (function () {
+        var sidebar = document.getElementById("sidebar");
+        var toggle = document.getElementById("sidebarToggle");
+        var overlay = document.getElementById("sidebarOverlay");
 
-            document.addEventListener("DOMContentLoaded", function () {
-              var aktif    = {{ jumlah_warga_aktif|default(0) }};
-              var nonaktif = {{ jumlah_warga_nonaktif|default(0) }};
-              var penerima = {{ jumlah_penyaluran|default(0) }};
+        if (!sidebar || !toggle || !overlay) return;
 
-              var dataBulanan = {{ data_per_bulan | default([0,0,0,0,0,0,0,0,0,0,0,0]) | tojson }};
+        function openSidebar() {
+          sidebar.classList.add("sidebar-open");
+          overlay.classList.add("active");
+          document.body.classList.add("sidebar-open-body");
+          overlay.setAttribute("aria-hidden", "false");
+          toggle.setAttribute("aria-label", "Tutup menu");
+        }
 
-              var labels = [
-                "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-                "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
-              ];
+        function closeSidebar() {
+          sidebar.classList.remove("sidebar-open");
+          overlay.classList.remove("active");
+          document.body.classList.remove("sidebar-open-body");
+          overlay.setAttribute("aria-hidden", "true");
+          toggle.setAttribute("aria-label", "Buka menu");
+        }
 
-              function makeLineChart(id, data, warna) {
-        var ctx = document.getElementById(id);
-        if (!ctx) return;
-
-        new Chart(ctx, {
-          type: "line",
-          data: {
-            labels: labels,
-            datasets: [{
-              data: data,
-              borderColor: warna,
-              backgroundColor: warna + "22",
-              borderWidth: 2,
-              pointRadius: 3,
-              pointBackgroundColor: warna,
-              fill: true,
-              tension: 0.4
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false }
-            }
-          }
+        toggle.addEventListener("click", function () {
+          if (sidebar.classList.contains("sidebar-open")) closeSidebar();
+          else openSidebar();
         });
-      }
 
-      makeLineChart("chartAktif", dataBulanan, "#1D9E75");
-      makeLineChart("chartNonaktif", dataBulanan, "#E24B4A");
-      makeLineChart("chartPenerima", dataBulanan, "#378ADD");
-      makeLineChart("chartPetugas", dataBulanan, "#F59E0B");
+        overlay.addEventListener("click", closeSidebar);
+      })();
+    </script>
+
+    <!-- Script Konfirmasi Logout -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const logoutLink = document.getElementById("logout-link");
+
+        if (logoutLink) {
+          logoutLink.addEventListener("click", function (e) {
+            e.preventDefault();
+
+            Swal.fire({
+              title: "Yakin ingin logout?",
+              text: "Anda akan keluar dari sistem",
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonColor: "#ef4444",
+              cancelButtonColor: "#6b7280",
+              confirmButtonText: "Ya, Logout",
+              cancelButtonText: "Batal"
+            }).then((result) => {
+              if (result.isConfirmed) {
+                window.location.href = "{{ url_for('logout') }}";
+              }
+            });
+          });
+        }
       });
     </script>
   </body>

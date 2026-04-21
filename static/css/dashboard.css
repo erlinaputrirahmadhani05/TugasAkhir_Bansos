@@ -1044,3 +1044,131 @@ button.btn-delete:hover {
   width: 100% !important;
   height: 120px !important; /* bisa kamu atur */
 }
+
+/* Logout default */
+.sidebar-footer {
+    padding: 16px;
+}
+
+.nav-item.logout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    background-color: #ef4444; /* merah */
+    color: white;
+    border-radius: 8px;
+    padding: 10px 12px;
+
+    text-decoration: none;
+    font-weight: 500;
+
+    transition: all 0.2s ease;
+}
+
+/* Icon putih */
+.nav-item.logout svg {
+    stroke: white;
+}
+
+/* Hover */
+.nav-item.logout:hover {
+    background-color: #dc2626; /* merah lebih gelap */
+}
+
+/* Klik */
+.nav-item.logout:active {
+    transform: scale(0.97);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+/* ================== 3 CARD IN ONE ROW ================== */
+.dashboard-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.dashboard-stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.dashboard-stat-card:hover {
+    transform: translateY(-4px);
+}
+
+.stat-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    color: #3b82f6;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.stat-info-label {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.stat-info-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.stat-aktif { color: #1D9E75; }
+.stat-penerima { color: #378ADD; }
+
+/* Responsive */
+@media (max-width: 992px) {
+    .dashboard-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .dashboard-stats-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-stat-card {
+        padding: 20px;
+    }
+}
+
+.stat-orange {
+    color: #F59E0B !important;
+    font-weight: 700;
+}
+
+.stat-nonaktif {
+    color: #EF4444 !important;   /* Merah yang lebih jelas */
+}

@@ -90,7 +90,6 @@ def init_database():
         CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
             nama_lengkap VARCHAR(255) NOT NULL,
-            username VARCHAR(100) NOT NULL UNIQUE,
             password VARCHAR(255) NOT NULL,
             email VARCHAR(255) NOT NULL UNIQUE,
             role ENUM('superadmin', 'admin', 'petugas lapangan') NOT NULL DEFAULT 'petugas lapangan',
@@ -102,7 +101,7 @@ def init_database():
         cursor.execute(create_table_query)
         
         # Insert superadmin jika belum ada
-        check_user_query = "SELECT COUNT(*) as count FROM users WHERE username = 'superadmin'"
+        check_user_query = "SELECT COUNT(*) as count FROM users WHERE email = 'superadmin@gmail.com'"
         cursor.execute(check_user_query)
         result = cursor.fetchone()
         
@@ -118,12 +117,11 @@ def init_database():
             hashed_password = generate_password_hash('superadmin123')
             
             insert_user_query = """
-            INSERT INTO users (nama_lengkap, username, password, email, role, status_akun)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO users (nama_lengkap, password, email, role, status_akun)
+            VALUES (%s, %s, %s, %s, %s)
             """
             cursor.execute(insert_user_query, (
                 'Super Administrator',
-                'superadmin',
                 hashed_password,
                 'superadmin@gmail.com',
                 'superadmin',
@@ -265,7 +263,7 @@ def get_all_users():
     try:
         cursor, use_dict = _get_cursor(connection)
         
-        query = "SELECT id, nama_lengkap, username, email, role, status_akun, created_at FROM users ORDER BY created_at DESC"
+        query = "SELECT id, nama_lengkap, email, role, status_akun, created_at FROM users ORDER BY created_at DESC"
         cursor.execute(query)
         users = cursor.fetchall()
         
@@ -283,7 +281,7 @@ def get_all_users():
         if connection:
             connection.close()
 
-def create_user(nama_lengkap, username, password, email, role='petugas lapangan', status_akun='aktif'):
+def create_user(nama_lengkap, password, email, role='petugas lapangan', status_akun='aktif'):
     """
     Membuat user baru di database
     """
@@ -309,8 +307,8 @@ def create_user(nama_lengkap, username, password, email, role='petugas lapangan'
         hashed_password = hash_password(password)
         
         # Cek apakah username atau email sudah ada
-        check_query = "SELECT COUNT(*) as count FROM users WHERE username = %s OR email = %s"
-        cursor.execute(check_query, (username, email))
+        check_query = "SELECT COUNT(*) as count FROM users WHERE email = %s"
+        cursor.execute(check_query, (email))
         result = cursor.fetchone()
         count = result.get('count', 0) if isinstance(result, dict) else result[0] if isinstance(result, tuple) else 0
         
@@ -319,10 +317,10 @@ def create_user(nama_lengkap, username, password, email, role='petugas lapangan'
         
         # Insert user baru
         insert_query = """
-        INSERT INTO users (nama_lengkap, username, password, email, role, status_akun)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO users (nama_lengkap, password, email, role, status_akun)
+        VALUES (%s, %s, %s, %s, %s)
         """
-        cursor.execute(insert_query, (nama_lengkap, username, hashed_password, email, role, status_akun))
+        cursor.execute(insert_query, (nama_lengkap, hashed_password, email, role, status_akun))
         connection.commit()
         return cursor.lastrowid
     except Exception as e:
@@ -376,7 +374,7 @@ def get_user_by_id(user_id):
         if connection:
             connection.close()
 
-def update_user(user_id, nama_lengkap, username, email, role, status_akun, password=None):
+def update_user(user_id, nama_lengkap, email, role, status_akun, password=None):
     """
     Update data user
     """
@@ -398,13 +396,13 @@ def update_user(user_id, nama_lengkap, username, email, role, status_akun, passw
                 cursor = connection.cursor()
         
         # Cek apakah username atau email sudah digunakan user lain
-        check_query = "SELECT COUNT(*) as count FROM users WHERE (username = %s OR email = %s) AND id != %s"
-        cursor.execute(check_query, (username, email, user_id))
+        check_query = "SELECT COUNT(*) as count FROM users WHERE email = %s AND id != %s"
+        cursor.execute(check_query, (email, user_id))
         result = cursor.fetchone()
         count = result.get('count', 0) if isinstance(result, dict) else result[0] if isinstance(result, tuple) else 0
         
         if count > 0:
-            raise Exception("Username atau email sudah digunakan user lain!")
+            raise Exception("Email sudah digunakan user lain!")
         
         # Update user
         if password:
@@ -412,17 +410,17 @@ def update_user(user_id, nama_lengkap, username, email, role, status_akun, passw
             hashed_password = hash_password(password)
             update_query = """
             UPDATE users 
-            SET nama_lengkap = %s, username = %s, email = %s, role = %s, status_akun = %s, password = %s
+            SET nama_lengkap = %s, email = %s, role = %s, status_akun = %s, password = %s
             WHERE id = %s
             """
-            cursor.execute(update_query, (nama_lengkap, username, email, role, status_akun, hashed_password, user_id))
+            cursor.execute(update_query, (nama_lengkap, email, role, status_akun, hashed_password, user_id))
         else:
             update_query = """
             UPDATE users 
-            SET nama_lengkap = %s, username = %s, email = %s, role = %s, status_akun = %s
+            SET nama_lengkap = %s, email = %s, role = %s, status_akun = %s
             WHERE id = %s
             """
-            cursor.execute(update_query, (nama_lengkap, username, email, role, status_akun, user_id))
+            cursor.execute(update_query, (nama_lengkap, email, role, status_akun, user_id))
         
         connection.commit()
         return True

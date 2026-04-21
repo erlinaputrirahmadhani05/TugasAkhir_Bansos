@@ -13,7 +13,6 @@
           <tr>
             <th>No</th>
             <th>Nama Lengkap</th>
-            <th>Username</th>
             <th>Email</th>
             <th>Role</th>
             <th>Status</th>
@@ -25,10 +24,9 @@
           <tr>
             <td>{{ loop.index }}</td>
             <td>{{ user.nama_lengkap }}</td>
-            <td>{{ user.username }}</td>
             <td>{{ user.email }}</td>
-            <td>{{ user.role }}</td>
-            <td>
+            <td style="text-align: center">{{ user.role }}</td>
+            <td style="text-align: center">
               <span class="status-badge status-{{ user.status_akun }}"> {{ user.status_akun }} </span>
             </td>
             <td>
@@ -56,7 +54,7 @@
           </tr>
           {% endfor %} {% else %}
           <tr>
-            <td colspan="7" class="text-center">Tidak ada data user</td>
+            <td colspan="6" class="text-center">Tidak ada data user</td>
           </tr>
           {% endif %}
         </tbody>
@@ -97,11 +95,10 @@
 
         rows.forEach((row) => {
           let nama = row.cells[1].innerText.toLowerCase();
-          let username = row.cells[2].innerText.toLowerCase();
-          let email = row.cells[3].innerText.toLowerCase();
-          let role = row.cells[4].innerText.toLowerCase();
+          let email = row.cells[2].innerText.toLowerCase();
+          let role = row.cells[3].innerText.toLowerCase();
 
-          let match = nama.includes(filter) || username.includes(filter) || email.includes(filter) || role.includes(filter);
+          let match = nama.includes(filter) || email.includes(filter) || role.includes(filter);
 
           row.style.display = match ? "" : "none";
         });
