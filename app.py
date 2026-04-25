@@ -143,38 +143,54 @@ def dashboard():
     jumlah_warga_aktif = 0
     jumlah_warga_nonaktif = 0
     jumlah_penyaluran = 0
-    jumlah_akun_aktif = 0   # ← Baru ditambahkan
+    jumlah_akun_aktif = 0
+    persentase_bantuan = 0
+    penerima_terbaru = []
+    status_warga = {}
+    data_per_bulan = [0] * 12
+    penerima_per_kuartal = [0, 0, 0, 0]
 
     try:
         role = session.get('role', '').lower()
         conn = get_db_connection()
         cursor = conn.cursor()
-        
-        data_per_bulan = [0] * 12  # Jan - Des
 
-        # Data per bulan untuk chart (jika masih digunakan)
+       # ==== DATA PER KUARTAL ====
         cursor.execute("""
-            SELECT MONTH(created_at) as bulan, COUNT(*) as jumlah
+            SELECT 
+                QUARTER(tanggal_terima) as kuartal,
+                COUNT(*) as jumlah
             FROM data_penerima
-            GROUP BY MONTH(created_at)
+            GROUP BY QUARTER(tanggal_terima)
         """)
-        hasil = cursor.fetchall()
 
-        for row in hasil:
-            bulan = row[0]
+        hasil_kuartal = cursor.fetchall()
+        print("DEBUG KUARTAL:", hasil_kuartal)
+
+        # reset default
+        penerima_per_kuartal = [0, 0, 0, 0]
+
+        for row in hasil_kuartal:
+            kuartal = row[0]
             jumlah = row[1]
-            if 1 <= bulan <= 12:
-                data_per_bulan[bulan - 1] = jumlah
 
-        # TOTAL WARGA AKTIF
+            if kuartal == 1:
+                penerima_per_kuartal[0] = jumlah
+            elif kuartal == 2:
+                penerima_per_kuartal[1] = jumlah
+            elif kuartal == 3:
+                penerima_per_kuartal[2] = jumlah
+            elif kuartal == 4:
+                penerima_per_kuartal[3] = jumlah
+
+        # ==== TOTAL WARGA ====
         cursor.execute("SELECT COUNT(*) FROM warga_penerima WHERE status='aktif'")
         jumlah_warga_aktif = cursor.fetchone()[0]
 
-        # TOTAL WARGA NONAKTIF
         cursor.execute("SELECT COUNT(*) FROM warga_penerima WHERE status='tidak_aktif'")
         jumlah_warga_nonaktif = cursor.fetchone()[0]
 
-        # TOTAL PENERIMA BANTUAN
+        # ==== TOTAL PENERIMA BANTUAN ====
         if role == 'petugas lapangan':
             user_id = session.get('user_id')
             if user_id:
@@ -184,27 +200,57 @@ def dashboard():
             cursor.execute("SELECT COUNT(*) FROM data_penerima")
             jumlah_penyaluran = cursor.fetchone()[0]
 
-        # TOTAL AKUN TERDAFTAR AKTIF  ← Baru
-        cursor.execute("SELECT COUNT(*) FROM users WHERE status_akun = 'Aktif'")  # Sesuaikan nama tabel dan kolom jika berbeda
+        # ==== TOTAL AKUN AKTIF =====
+        cursor.execute("SELECT COUNT(*) FROM users WHERE status_akun = 'Aktif'")
         jumlah_akun_aktif = cursor.fetchone()[0]
+
+        # ==== PERSENTASE PENYALURAN ====
+        total_warga_aktif = jumlah_warga_aktif or 1
+        cursor.execute("""
+            SELECT COUNT(DISTINCT warga_id) 
+            FROM data_penerima 
+            WHERE warga_id IN (SELECT id FROM warga_penerima WHERE status='aktif')
+        """)
+        jumlah_warga_yang_mendapat_bantuan = cursor.fetchone()[0] or 0
+        persentase_bantuan = round((jumlah_warga_yang_mendapat_bantuan / total_warga_aktif) * 100, 1)
+
+        # ===== DATA PENERIMA TERBARU (5 data) ====
+        cursor.execute("""
+            SELECT dp.nama, dp.nik, u.nama_lengkap as nama_petugas, dp.created_at
+            FROM data_penerima dp
+            LEFT JOIN users u ON dp.input_by = u.id
+            ORDER BY dp.created_at DESC 
+            LIMIT 5
+        """)
+        penerima_terbaru = cursor.fetchall()
+
+        # ===== STATUS WARGA ====
+        cursor.execute("""
+            SELECT status, COUNT(*) as jumlah 
+            FROM warga_penerima 
+            GROUP BY status
+        """)
+        status_warga = dict(cursor.fetchall())
 
         cursor.close()
         conn.close()
 
     except Exception as e:
         traceback.print_exc()
-        # Optional: flash message error
-        # flash('Terjadi kesalahan saat memuat dashboard', 'error')
 
     return render_template(
         'dashboard.html',
-        jumlah_akun_aktif=jumlah_akun_aktif,      # ← Ditambahkan
+        jumlah_akun_aktif=jumlah_akun_aktif,
         jumlah_warga_aktif=jumlah_warga_aktif,
         jumlah_warga_nonaktif=jumlah_warga_nonaktif,
         jumlah_penyaluran=jumlah_penyaluran,
-        data_per_bulan=data_per_bulan
+        persentase_bantuan=persentase_bantuan,
+        penerima_terbaru=penerima_terbaru,
+        data_per_bulan=data_per_bulan,
+        status_warga=status_warga,
+        penerima_per_kuartal=penerima_per_kuartal,
     )
-        
+    
 @app.route('/kelola-akun')
 @require_login
 @require_superadmin
@@ -510,45 +556,57 @@ def data_penerima():
     role = session.get('role', '').lower()
     user_id = session.get('user_id')
 
+    tahap = request.args.get('tahap')
+    tahun = request.args.get('tahun')
+    tahap_filter = request.args.get('tahap')
+    tahun_filter = request.args.get('tahun')
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
+    query = """
+        SELECT p.id, p.tanggal_terima, p.tahap, p.tahun, 
+            p.bukti_terima_path AS bukti,
+            w.nama_encrypted, w.nik_encrypted, w.rt_encrypted,
+            u.nama_lengkap AS petugas_lapangan
+        FROM data_penerima p
+        JOIN warga_penerima w ON p.warga_id = w.id
+        LEFT JOIN users u ON p.input_by = u.id
+    """
+
+    conditions = []
+    params = []
+
+    # Filter role petugas
     if role == 'petugas lapangan':
-        # Hanya data yang diinput oleh petugas ini
-        cursor.execute("""
-            SELECT p.id, p.tanggal_terima, p.tahap, p.tahun, 
-                p.bukti_terima_path AS bukti,
-                w.nama_encrypted, w.nik_encrypted, w.rt_encrypted,
-                u.nama_lengkap AS petugas_lapangan
-            FROM data_penerima p
-            JOIN warga_penerima w ON p.warga_id = w.id
-            LEFT JOIN users u ON p.input_by = u.id
-            WHERE p.input_by = %s
-            ORDER BY p.tahap ASC, p.tanggal_terima DESC
-        """, (user_id,))
-    else:
-        # Admin / superadmin: semua data
-        cursor.execute("""
-            SELECT p.id, p.tanggal_terima, p.tahap, p.tahun, 
-                p.bukti_terima_path AS bukti,
-                w.nama_encrypted, w.nik_encrypted, w.rt_encrypted,
-                u.nama_lengkap AS petugas_lapangan
-            FROM data_penerima p
-            JOIN warga_penerima w ON p.warga_id = w.id
-            LEFT JOIN users u ON p.input_by = u.id
-            ORDER BY p.tahap ASC, p.tanggal_terima DESC
-        """)
+        conditions.append("p.input_by = %s")
+        params.append(user_id)
+
+    # Filter tahap
+    if tahap:
+        conditions.append("p.tahap = %s")
+        params.append(tahap)
+
+    # Filter tahun
+    if tahun:
+        conditions.append("p.tahun = %s")
+        params.append(tahun)
+
+    # Gabungkan WHERE jika ada kondisi
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    query += " ORDER BY p.tanggal_terima DESC"
+
+    cursor.execute(query, tuple(params))
     rows = cursor.fetchall()
+
     cursor.close()
     conn.close()
 
-    # Decrypt nama & NIK
-    grouped_data = {}
-
+    data = []
     for r in rows:
-        tahap = r["tahap"] or "Tidak ada tahap"
-
-        item = {
+        data.append({
             "id": r["id"],
             "nama": decrypt_data(r["nama_encrypted"]),
             "nik": decrypt_data(r["nik_encrypted"]),
@@ -557,16 +615,10 @@ def data_penerima():
             "tanggal_terima": r["tanggal_terima"].strftime("%Y-%m-%d") if r["tanggal_terima"] else "",
             "tahap": r["tahap"],
             "tahun": r["tahun"],
-            "bukti": r["bukti"] if r["bukti"] else None
-        }
+            "bukti": r["bukti"]
+        })
 
-        if tahap not in grouped_data:
-            grouped_data[tahap] = []
-
-        grouped_data[tahap].append(item)
-        grouped_data = dict(sorted(grouped_data.items()))
-
-    return render_template('data_penerima.html', grouped_data=grouped_data)
+    return render_template('data_penerima.html', data=data, tahap_selected=tahap_filter, tahun_selected=tahun_filter)
 
 @app.route('/data-penerima/input', methods=['GET', 'POST'])
 @require_login

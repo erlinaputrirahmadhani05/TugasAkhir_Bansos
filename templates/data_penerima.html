@@ -2,23 +2,65 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 {% endblock %} {% block content %}
 <div class="page-content">
-  <div class="content-card">
-    <div style="margin-bottom: 15px; display: flex; align-items: center">
+
+  <!-- ================= SUPERADMIN & ADMIN ================= -->
+  {% if session.role|lower in ['superadmin', 'admin'] %}
+
+  <div class="filter-bar">
+
+    <!-- KIRI -->
+    <div class="filter-left">
       {% if session.role|lower == 'superadmin' %}
-      <!-- SUPERADMIN -->
-      <div style="display: flex; justify-content: space-between; width: 100%">
-        <!-- KIRI -->
-        <a href="{{ url_for('download_laporan') }}" class="btn-download"> Download Laporan Excel </a>
-
-        <!-- KANAN -->
-        <input type="text" id="searchPenerima" placeholder="Cari Data Penerima..." class="search-input" />
-      </div>
-
-      {% else %}
-      <!-- ADMIN & PETUGAS -->
+      <a href="{{ url_for('download_laporan') }}" class="btn-download">
+        Download Laporan Excel
+      </a>
+      {% elif session.role|lower == 'admin' %}
       <input type="text" id="searchPenerima" placeholder="Cari Data Penerima..." class="search-input" />
       {% endif %}
     </div>
+
+    <!-- TENGAH (HANYA SUPERADMIN) -->
+    {% if session.role|lower == 'superadmin' %}
+    <div class="filter-center">
+      <input type="text" id="searchPenerima" placeholder="Cari Data Penerima..." class="search-input" />
+    </div>
+    {% endif %}
+
+    <!-- KANAN -->
+    <div class="filter-right">
+      <select id="filterTahap" class="search-input">
+        <option value="" {% if not tahap_selected %}selected{% endif %}>Semua Tahap</option>
+        <option value="1" {% if tahap_selected == '1' %}selected{% endif %}>Tahap 1 : Jan - Mar</option>
+        <option value="2" {% if tahap_selected == '2' %}selected{% endif %}>Tahap 2 : Apr - Jun</option>
+        <option value="3" {% if tahap_selected == '3' %}selected{% endif %}>Tahap 3 : Jul - Sep</option>
+        <option value="4" {% if tahap_selected == '4' %}selected{% endif %}>Tahap 4 : Okt - Des</option>
+      </select>
+
+      <select id="filterTahun" class="search-input">
+        <option value="" {% if not tahun_selected %}selected{% endif %}>Semua Tahun</option>
+        <option value="2026" {% if tahun_selected == '2026' %}selected{% endif %}>2026</option>
+        <option value="2027" {% if tahun_selected == '2027' %}selected{% endif %}>2027</option>
+      </select>
+
+      <button id="btnFilter" class="btn-download" style="background: #2563eb">
+        Filter
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ================= PETUGAS ================= -->
+  {% else %}
+
+  <div class="filter-bar">
+    <div class="filter-left">
+      <input type="text" id="searchPenerima" placeholder="Cari Data Penerima..." class="search-input" />
+    </div>
+  </div>
+
+  {% endif %}
+
+</div>
 
     <div class="table-wrapper">
       <table class="data-table" id="penerimaTable">
@@ -35,44 +77,27 @@
           </tr>
         </thead>
         <tbody>
-  {% if grouped_data %}
-    
-    {% for tahap, items in grouped_data.items() %}
-    
-    <!-- HEADER TAHAP -->
-    <tr>
-      <td colspan="8" style="background:#eee; font-weight:bold; text-align:center;">
-        Tahap {{ tahap }}
-      </td>
-    </tr>
-
-    {% for d in items %}
-    <tr>
-      <td>{{ loop.index }}</td>
-      <td>{{ d.nama }}</td>
-      <td>{{ d.nik }}</td>
-      <td style="text-align: center">{{ d.rt }}</td>
-      <td style="text-align: center">{{ d.petugas_lapangan }}</td>
-      <td style="text-align: center">{{ d.tanggal_terima or '-' }}</td>
-      <td style="text-align: center">{{ d.tahap or '-' }}</td>
-      <td style="text-align: center">
-        {% if d.bukti %}
-        <a href="javascript:void(0)" class="lihat-bukti" data-img="{{ url_for('get_bukti', filename=d.bukti) }}">
-          Lihat Bukti
-        </a>
-        {% else %} - {% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-
-    {% endfor %}
-
-  {% else %}
-  <tr>
-    <td colspan="8" class="text-center">Belum ada data penerima</td>
-  </tr>
-  {% endif %}
-</tbody>
+          {% if data %} {% for d in data %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ d.nama }}</td>
+            <td>{{ d.nik }}</td>
+            <td style="text-align: center">{{ d.rt }}</td>
+            <td style="text-align: center">{{ d.petugas_lapangan }}</td>
+            <td style="text-align: center">{{ d.tanggal_terima or '-' }}</td>
+            <td style="text-align: center">{{ d.tahap or '-' }}</td>
+            <td style="text-align: center">
+              {% if d.bukti %}
+              <button type="button" class="btn-lihat-bukti lihat-bukti" data-img="{{ url_for('get_bukti', filename=d.bukti) }}"> Lihat Bukti </a>
+              {% else %} - {% endif %}
+            </td>
+          </tr>
+          {% endfor %} {% else %}
+          <tr>
+            <td colspan="8" class="text-center">Belum ada data penerima</td>
+          </tr>
+          {% endif %}
+        </tbody>
       </table>
     </div>
   </div>
@@ -97,16 +122,41 @@
         let rows = document.querySelectorAll("#penerimaTable tbody tr");
 
         rows.forEach((row) => {
-  // CEK apakah ini baris data (bukan header tahap)
-  if (row.cells.length < 8) return;
+          // CEK apakah ini baris data (bukan header tahap)
+          if (row.cells.length < 8) return;
 
-  let nama = row.cells[1].innerText.toLowerCase();
-  let nik = row.cells[2].innerText.toLowerCase();
-  let rt = row.cells[3].innerText.toLowerCase();
+          let nama = row.cells[1].innerText.toLowerCase();
+          let nik = row.cells[2].innerText.toLowerCase();
+          let rt = row.cells[3].innerText.toLowerCase();
 
-  let match = nama.includes(filter) || nik.includes(filter) || rt.includes(filter);
-  row.style.display = match ? "" : "none";
-});
+          let match = nama.includes(filter) || nik.includes(filter) || rt.includes(filter);
+          row.style.display = match ? "" : "none";
+        });
+      });
+    }
+
+    const btnFilter = document.getElementById("btnFilter");
+
+    if (btnFilter) {
+      btnFilter.addEventListener("click", function () {
+        const tahap = document.getElementById("filterTahap").value;
+        const tahun = document.getElementById("filterTahun").value;
+
+        let url = new URL(window.location.href);
+
+        if (tahap) {
+          url.searchParams.set("tahap", tahap);
+        } else {
+          url.searchParams.delete("tahap");
+        }
+
+        if (tahun) {
+          url.searchParams.set("tahun", tahun);
+        } else {
+          url.searchParams.delete("tahun");
+        }
+
+        window.location.href = url.toString();
       });
     }
 

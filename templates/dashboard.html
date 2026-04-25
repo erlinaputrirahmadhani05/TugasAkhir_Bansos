@@ -11,7 +11,7 @@
   </head>
   <body class="dashboard-page">
     <div class="dashboard-container">
-      
+
       <!-- Tombol Hamburger -->
       <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Buka menu">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -73,8 +73,8 @@
                 <span>Kelola Akun</span>
               </a>
             </li>
-            {% endif %} 
-            {% endif %} 
+            {% endif %}
+            {% endif %}
 
             {% if session.get('role', '').lower() == 'admin' %}
             <li>
@@ -146,10 +146,10 @@
             </div>
 
             <!-- ================= STATISTIK DASHBOARD ================= -->
-            <div class="dashboard-stats-row">
 
-              <!-- ================= PETUGAS LAPANGAN ================= -->
-              {% if session.get('role', '').lower() == 'petugas lapangan' %}
+            {% if session.get('role', '').lower() == 'petugas lapangan' %}
+            <!-- ===== PETUGAS LAPANGAN ===== -->
+            <div class="dashboard-stats-row">
               <div class="dashboard-stat-card">
                 <div class="stat-icon">
                   <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
@@ -162,10 +162,11 @@
                 <p class="stat-info-value stat-penerima">{{ jumlah_penyaluran|default(0) }}</p>
                 <small>orang</small>
               </div>
+            </div>
 
-              <!-- ================= SUPERADMIN ================= -->
-              {% elif session.get('role', '').lower() == 'superadmin' %}
-              <!-- Card 1: Total Akun Aktif -->
+            {% elif session.get('role', '').lower() == 'superadmin' %}
+            <!-- ===== SUPERADMIN ===== -->
+            <div class="dashboard-stats-row">
               <div class="dashboard-stat-card">
                 <div class="stat-icon">
                   <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
@@ -178,8 +179,6 @@
                 <p class="stat-info-value stat-aktif">{{ jumlah_akun_aktif|default(0) }}</p>
                 <small>akun</small>
               </div>
-
-              <!-- Card 2: Total Warga Aktif (Orange) -->
               <div class="dashboard-stat-card">
                 <div class="stat-icon">
                   <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
@@ -191,8 +190,6 @@
                 <p class="stat-info-value stat-orange">{{ jumlah_warga_aktif|default(0) }}</p>
                 <small>orang</small>
               </div>
-
-              <!-- Card 3: Total Penerima Bantuan -->
               <div class="dashboard-stat-card">
                 <div class="stat-icon">
                   <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
@@ -205,66 +202,144 @@
                 <p class="stat-info-value stat-penerima">{{ jumlah_penyaluran|default(0) }}</p>
                 <small>orang</small>
               </div>
-
-              <!-- ================= ADMIN ================= -->
-              {% elif session.get('role', '').lower() == 'admin' %}
-              <!-- Card 1: Total Warga Aktif (Orange) -->
-              <div class="dashboard-stat-card">
-                <div class="stat-icon">
-                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                  </svg>
-                </div>
-                <p class="stat-info-label">Total Warga Terdaftar Aktif</p>
-                <p class="stat-info-value stat-orange">{{ jumlah_warga_aktif|default(0) }}</p>
-                <small>orang</small>
-              </div>
-
-              <!-- Card 2: Total Warga Nonaktif (Merah) -->
-              <div class="dashboard-stat-card">
-                <div class="stat-icon">
-                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                  </svg>
-                </div>
-                <p class="stat-info-label">Total Warga Terdaftar Nonaktif</p>
-                <p class="stat-info-value stat-nonaktif">{{ jumlah_warga_nonaktif|default(0) }}</p>
-                <small>orang</small>
-              </div>
-
-              <!-- Card 3: Total Penerima Bantuan -->
-              <div class="dashboard-stat-card">
-                <div class="stat-icon">
-                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                    <path d="M2 17l10 5 10-5"></path>
-                    <path d="M2 12l10 5 10-5"></path>
-                  </svg>
-                </div>
-                <p class="stat-info-label">Total Penerima Bantuan</p>
-                <p class="stat-info-value stat-penerima">{{ jumlah_penyaluran|default(0) }}</p>
-                <small>orang</small>
-              </div>
-              {% endif %}
-
             </div>
+
+            {% elif session.get('role', '').lower() == 'admin' %}
+            <!-- ===== ADMIN ===== -->
+
+            <!-- 4 Stat Cards Horizontal -->
+            <div class="admin-stats-row">
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon icon-green">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  </svg>
+                </div>
+                <div class="admin-stat-text">
+                  <span class="admin-stat-label">Warga Terdaftar Aktif</span>
+                  <span class="admin-stat-value text-green">{{ jumlah_warga_aktif|default(0) }}</span>
+                  <span class="admin-stat-unit">orang</span>
+                </div>
+              </div>
+
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon icon-red">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <line x1="17" y1="11" x2="23" y2="11"/>
+                  </svg>
+                </div>
+                <div class="admin-stat-text">
+                  <span class="admin-stat-label">Warga Terdaftar Nonaktif</span>
+                  <span class="admin-stat-value text-red">{{ jumlah_warga_nonaktif|default(0) }}</span>
+                  <span class="admin-stat-unit">orang</span>
+                </div>
+              </div>
+
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon icon-blue">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                  </svg>
+                </div>
+                <div class="admin-stat-text">
+                  <span class="admin-stat-label">Total Penerima Bantuan</span>
+                  <span class="admin-stat-value text-blue">{{ jumlah_penyaluran|default(0) }}</span>
+                  <span class="admin-stat-unit">orang</span>
+                </div>
+              </div>
+
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon icon-amber">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                  </svg>
+                </div>
+                <div class="admin-stat-text">
+                  <span class="admin-stat-label">Persentase Mendapat Bantuan</span>
+                  <span class="admin-stat-value text-amber">{{ persentase_bantuan|default(0) }}%</span>
+                  <span class="admin-stat-unit">dari total warga aktif</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2 Grafik -->
+            <div class="admin-charts-row">
+              <div class="admin-chart-card">
+                <h3 class="admin-chart-title">Penerima Bantuan per Kuartal</h3>
+                <canvas id="kuartalChart"></canvas>
+              </div>
+            </div>
+
+            {% endif %}
+            <!-- ===== AKHIR STATISTIK ===== -->
+
           </div>
           {% endblock %}
         </div>
       </main>
     </div>
 
+    <!-- ===== CHART.JS — di luar block content agar selalu termuat ===== -->
+    {% if session.get('role', '').lower() == 'admin' %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-      // Script Sidebar Toggle
+      var penerimaKuartal  = {{ penerima_per_kuartal | default([0,0,0,0]) | tojson }};
+
+      var isDark    = document.documentElement.classList.contains('dark');
+      var textColor = isDark ? '#b0b0b0' : '#6b7280';
+      var gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+      var rtColors  = ['#1D9E75','#378ADD','#BA7517','#A32D2D','#534AB7','#0F6E56','#D85A30','#185FA5'];
+
+      document.addEventListener('DOMContentLoaded', function () {
+
+        // Grafik — Penerima per Kuartal
+        var ctxKuartal = document.getElementById('kuartalChart');
+        if (ctxKuartal) {
+          new Chart(ctxKuartal, {
+            type: 'bar',
+            data: {
+              labels: ['Jan – Mar', 'Apr – Jun', 'Jul – Sep', 'Okt – Des'],
+              datasets: [{
+                label: 'Penerima',
+                data: penerimaKuartal,
+                backgroundColor: ['#1D9E75','#378ADD','#BA7517','#534AB7'],
+                borderRadius: 6,
+                borderSkipped: false
+              }]
+            },
+            options: {
+              plugins: { legend: { display: false } },
+              scales: {
+                x: {
+                  ticks: { color: textColor, font: { size: 11 } },
+                  grid: { display: false }
+                },
+                y: {
+                  ticks: { color: textColor, font: { size: 11 } },
+                  grid: { color: gridColor },
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+        }
+
+      });
+    </script>
+    {% endif %}
+
+    <!-- Script Sidebar Toggle -->
+    <script>
       (function () {
         var sidebar = document.getElementById("sidebar");
-        var toggle = document.getElementById("sidebarToggle");
+        var toggle  = document.getElementById("sidebarToggle");
         var overlay = document.getElementById("sidebarOverlay");
-
         if (!sidebar || !toggle || !overlay) return;
-
         function openSidebar() {
           sidebar.classList.add("sidebar-open");
           overlay.classList.add("active");
@@ -272,7 +347,6 @@
           overlay.setAttribute("aria-hidden", "false");
           toggle.setAttribute("aria-label", "Tutup menu");
         }
-
         function closeSidebar() {
           sidebar.classList.remove("sidebar-open");
           overlay.classList.remove("active");
@@ -280,12 +354,10 @@
           overlay.setAttribute("aria-hidden", "true");
           toggle.setAttribute("aria-label", "Buka menu");
         }
-
         toggle.addEventListener("click", function () {
           if (sidebar.classList.contains("sidebar-open")) closeSidebar();
           else openSidebar();
         });
-
         overlay.addEventListener("click", closeSidebar);
       })();
     </script>
@@ -294,11 +366,9 @@
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         const logoutLink = document.getElementById("logout-link");
-
         if (logoutLink) {
           logoutLink.addEventListener("click", function (e) {
             e.preventDefault();
-
             Swal.fire({
               title: "Yakin ingin logout?",
               text: "Anda akan keluar dari sistem",
@@ -317,5 +387,6 @@
         }
       });
     </script>
+
   </body>
 </html>

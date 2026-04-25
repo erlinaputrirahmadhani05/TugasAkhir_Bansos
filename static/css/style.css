@@ -521,3 +521,206 @@
 .btn-batal:hover {
   background-color: #4b5563;
 }
+
+/* ================= FILTER BAR ================= */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filter-bar .search-input,
+.filter-bar select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  min-width: 150px;
+}
+
+.btn-filter {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-download {
+  background: #1d4ed8;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+/* ================= TABLE ================= */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px; /* biar tidak rusak */
+}
+
+/* ================= MOBILE ================= */
+@media (max-width: 768px) {
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-bar a,
+  .filter-bar button,
+  .filter-bar select,
+  .filter-bar input {
+    height: 42px;              /* tinggi seragam */
+    padding: 0 14px;
+    font-size: 14px;
+    border-radius: 8px;
+    box-sizing: border-box;
+  }
+
+  .btn-download {
+    background: #1d4ed8;
+    color: white;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #btnFilter {
+    background: #2563eb;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+
+  .data-table {
+    font-size: 12px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px;
+  }
+}
+
+.filter-bar input,
+.filter-bar select {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  min-width: 180px;
+}
+
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-download:hover,
+#btnFilter:hover {
+  opacity: 0.9;
+}
+
+.filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* KIRI */
+.filter-left {
+  flex: 1;
+}
+
+/* TENGAH */
+.filter-center {
+  flex: 2;
+  display: flex;
+  justify-content: center;
+}
+
+.filter-center input {
+  width: 100%;
+  max-width: 300px;
+}
+
+/* KANAN */
+.filter-right {
+  flex: 2;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* SAMAKAN UKURAN */
+.filter-input,
+.btn-filter {
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.btn-filter {
+  background: #2563eb;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+/* BIAR MIRIP BUTTON DOWNLOAD */
+.btn-download {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+}
+
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-left,
+  .filter-center,
+  .filter-right {
+    width: 100%;
+  }
+
+  .filter-right {
+    justify-content: space-between;
+  }
+
+  .filter-center input {
+    max-width: 100%;
+  }
+}
+
+.btn-lihat-bukti {
+  background-color: #53556d;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.btn-lihat-bukti:hover {
+  background-color: #1d4ed8;
+}
