@@ -1,15 +1,18 @@
-{% extends "dashboard.html" %} {% block page_title %}Data Warga{% endblock %} {% block extra_css %}
+{% extends "dashboard.html" %} 
+{% block page_title %}Data Warga{% endblock %} 
+
+{% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-{% endblock %} {% block content %}
+{% endblock %} 
+
+{% block content %}
 <div class="page-content">
   <div class="content-card">
-    <!-- Tombol Tambah -->
     <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center">
       <a href="{{ url_for('tambah_warga') }}" class="btn-submit"> + Tambah Warga </a>
       <input type="text" id="searchInput" placeholder="Cari Data Warga..." class="search-input" />
     </div>
 
-    <!-- TABEL DATA WARGA -->
     <div class="table-wrapper">
       <table class="data-table" id="wargaTable">
         <thead>
@@ -29,26 +32,60 @@
           {% for w in data_warga %}
           <tr>
             <td>{{ loop.index }}</td>
-            <td>{{ w.nik }}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="nik-cell"
+                      data-nik-masked="{{ '*' * ([w.nik|length - 3, 0]|max) }}{{ w.nik[-3:] if w.nik|length >= 3 else w.nik }}">
+                  {{ '*' * ([w.nik|length - 3, 0]|max) }}{{ w.nik[-3:] if w.nik|length >= 3 else w.nik }}
+                </span>
+                <button type="button"
+                        class="btn-dekripsi-eye"
+                        data-id="{{ w.id }}"
+                        data-target="nik"
+                        title="Lihat NIK lengkap">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+
             <td>{{ w.nama }}</td>
             <td style="text-align: center">{{ w.tanggal_lahir }}</td>
-            <td style="text-align: center">{{ w.nomor_hp }}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="hp-cell"
+                      data-hp-masked="{{ '*' * ([w.nomor_hp|length - 3, 0]|max) }}{{ w.nomor_hp[-3:] if w.nomor_hp|length >= 3 else w.nomor_hp }}">
+                  {{ '*' * ([w.nomor_hp|length - 3, 0]|max) }}{{ w.nomor_hp[-3:] if w.nomor_hp|length >= 3 else w.nomor_hp }}
+                </span>
+                <button type="button"
+                        class="btn-dekripsi-eye"
+                        data-id="{{ w.id }}"
+                        data-target="hp"
+                        title="Lihat No HP lengkap">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+
             <td style="text-align: center">{{ w.rt }}</td>
             <td style="text-align: center">{{ w.nama_petugas or '-' }}</td>
             <td style="text-align: center">
               <span class="status-badge status-{{ w.status|lower }}"> {{ w.status }} </span>
             </td>
+
             <td class="text-center">
-              <div class="action-buttons" style="display: flex; justify-content: center; gap: 5px">
-                <!-- Tombol Edit -->
+              <div class="action-buttons" style="display: flex; justify-content: center; gap: 8px">
                 <a href="{{ url_for('edit_warga', id=w.id) }}" class="btn-edit" title="Edit">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                   </svg>
                 </a>
-
-                <!-- Tombol Hapus -->
                 <form method="POST" action="{{ url_for('hapus_warga', id=w.id) }}" class="form-hapus">
                   <button type="submit" class="btn-delete" title="Hapus">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
@@ -64,58 +101,294 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="8" style="text-align: center">Belum ada data warga</td>
+            <td colspan="9" style="text-align: center">Belum ada data warga</td>
           </tr>
           {% endfor %}
-          <script>
-            document.querySelectorAll(".form-hapus").forEach((form) => {
-              form.addEventListener("submit", function (e) {
-                e.preventDefault(); // stop submit dulu
-
-                Swal.fire({
-                  title: "Yakin hapus data?",
-                  text: "Data warga akan dihapus permanen!",
-                  icon: "warning",
-                  showCancelButton: true,
-                  confirmButtonColor: "#ef4444",
-                  cancelButtonColor: "#6b7280",
-                  confirmButtonText: "Ya, hapus!",
-                  cancelButtonText: "Batal",
-                }).then((result) => {
-                  if (result.isConfirmed) {
-                    form.submit(); // lanjut hapus
-                  }
-                });
-              });
-            });
-
-            document.addEventListener("DOMContentLoaded", function () {
-              const searchInput = document.getElementById("searchInput");
-
-              if (searchInput) {
-                searchInput.addEventListener("keyup", function () {
-                  let filter = this.value.toLowerCase();
-                  let rows = document.querySelectorAll("#wargaTable tbody tr");
-
-                  rows.forEach((row) => {
-                    let nik = row.cells[1].innerText.toLowerCase();
-                    let nama = row.cells[2].innerText.toLowerCase();
-                    let tgl = row.cells[3].innerText.toLowerCase();
-                    let hp = row.cells[4].innerText.toLowerCase();
-                    let rt = row.cells[5].innerText.toLowerCase();
-
-                    let match = nik.includes(filter) || nama.includes(filter) || tgl.includes(filter) || hp.includes(filter) || rt.includes(filter);
-
-                    row.style.display = match ? "" : "none";
-                  });
-                });
-              }
-            });
-          </script>
         </tbody>
       </table>
+        <p id="notFoundMessage" style="display: none; text-align: center; padding: 15px; color: #64748b;">
+          Data tidak ditemukan
+        </p>
     </div>
   </div>
 </div>
+
+<div id="dekripsiModal" class="modal">
+  <div class="modal-box" style="max-width: 400px;">
+    <div style="text-align:center; margin-bottom: 16px;">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none"
+           stroke="#2563eb" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round"
+           style="display:block; margin: 0 auto 10px;">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <h3 style="margin:0 0 6px; font-size:16px; color:#1e293b; font-weight:600;">
+        Konfirmasi Dekripsi
+      </h3>
+      <p style="margin:0; font-size:14px; color:#64748b; line-height:1.5;" id="dekripsiModalDesc">
+        Apakah Anda ingin melihat data secara lengkap?
+      </p>
+    </div>
+
+    <div id="loadingDekripsi" style="display:none; text-align:center; padding:10px 0;">
+      <span style="font-size:13px; color:#64748b;">Sedang mendekripsi...</span>
+    </div>
+
+    <div class="modal-actions" id="dekripsiActions">
+      <button id="btnDekripsiConfirm" class="btn-unduh" style="background:#2563eb; min-width:100px;">
+        Dekripsi
+      </button>
+      <button id="btnDekripsiCancel" class="btn-batal" style="min-width:80px;">
+        Batal
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .btn-dekripsi-eye {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background-color: #dbeafe;
+    color: #1e40af;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .btn-dekripsi-eye:hover {
+    background-color: #2563eb;
+    color: #fff;
+  }
+
+  .decrypted-text {
+    color: #1e40af;
+    font-weight: 500;
+  }
+
+  .nik-cell, .hp-cell {
+    font-family: monospace;
+    letter-spacing: 0.04em; 
+    white-space: nowrap;
+  }
+
+  .cell-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+</style>
+
+<script>
+  const SVG_EYE = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>`;
+
+  const SVG_EYE_OFF = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>`;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("searchInput");
+const notFoundMessage = document.getElementById("notFoundMessage");
+
+if (searchInput) {
+  searchInput.addEventListener("keyup", function () {
+
+    const filter = this.value.toLowerCase();
+    let visibleRows = 0;
+
+    document.querySelectorAll("#wargaTable tbody tr").forEach((row) => {
+
+      // skip row kosong bawaan jinja
+      if (row.cells.length < 9) return;
+
+      const nik  = row.cells[1]?.innerText.toLowerCase() || "";
+      const nama = row.cells[2]?.innerText.toLowerCase() || "";
+      const hp   = row.cells[4]?.innerText.toLowerCase() || "";
+      const rt   = row.cells[5]?.innerText.toLowerCase() || "";
+
+      const isMatch =
+        nik.includes(filter) ||
+        nama.includes(filter) ||
+        hp.includes(filter) ||
+        rt.includes(filter);
+
+      row.style.display = isMatch ? "" : "none";
+
+      if (isMatch) visibleRows++;
+    });
+
+    if (notFoundMessage) {
+      notFoundMessage.style.display =
+        visibleRows === 0 ? "block" : "none";
+    }
+
+  });
+}
+    document.querySelectorAll(".form-hapus").forEach((form) => {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        Swal.fire({
+          title: "Yakin ingin menghapus data warga ini?",
+          text: "Data yang dihapus tidak dapat dikembalikan!",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ef4444",
+          cancelButtonColor: "#6b7280",
+          confirmButtonText: "Ya, Hapus!",
+          cancelButtonText: "Batal",
+          reverseButtons: true
+        }).then((result) => {
+          if (result.isConfirmed) form.submit();
+        });
+      });
+    });
+
+    let currentDataId  = null;   
+    let currentBtn     = null;   
+    let currentTarget  = null;   
+    let currentRow     = null;
+
+    const dekripsiModal    = document.getElementById("dekripsiModal");
+    const dekripsiModalDesc= document.getElementById("dekripsiModalDesc");
+    const loadingDekripsi  = document.getElementById("loadingDekripsi");
+    const dekripsiActions  = document.getElementById("dekripsiActions");
+    const btnConfirm       = document.getElementById("btnDekripsiConfirm");
+    const btnCancel        = document.getElementById("btnDekripsiCancel");
+
+    function resetModal() {
+      loadingDekripsi.style.display = "none";
+      dekripsiActions.style.display = "flex";
+      btnConfirm.disabled            = false;
+      btnConfirm.textContent         = "Dekripsi";
+    }
+
+    function closeModal() {
+      dekripsiModal.style.display = "none";
+      resetModal();
+    }
+
+    document.getElementById("wargaTable").addEventListener("click", function (e) {
+      const btn = e.target.closest(".btn-dekripsi-eye");
+      if (!btn) return;
+
+      currentDataId = btn.getAttribute("data-id");
+      currentTarget = btn.getAttribute("data-target"); 
+      currentBtn    = btn;
+      currentRow    = btn.closest("tr");
+
+      const cell = currentTarget === "nik"
+        ? currentRow.querySelector(".nik-cell")
+        : currentRow.querySelector(".hp-cell");
+
+      const isOpen = btn.classList.contains("is-open");
+
+      if (isOpen) {
+        const maskedAttr = currentTarget === "nik" ? "data-nik-masked" : "data-hp-masked";
+        const masked = cell.getAttribute(maskedAttr) || "••••••••";
+        cell.innerHTML   = masked;
+        cell.classList.remove("decrypted-text");
+        btn.innerHTML    = SVG_EYE;
+        btn.classList.remove("is-open");
+        btn.title = currentTarget === "nik" ? "Lihat NIK lengkap" : "Lihat No HP lengkap";
+      } else {
+        dekripsiModalDesc.textContent = currentTarget === "nik"
+          ? "Apakah Anda ingin melihat NIK secara lengkap?"
+          : "Apakah Anda ingin melihat No HP secara lengkap?";
+
+        resetModal();
+        dekripsiModal.style.display = "flex";
+      }
+    });
+    btnConfirm.addEventListener("click", function () {
+      if (!currentDataId || !currentRow || !currentTarget) return;
+
+      btnConfirm.disabled    = true;
+      btnConfirm.textContent = "Memproses...";
+      dekripsiActions.style.display = "none";
+      loadingDekripsi.style.display = "block";
+
+      fetch(`/warga-penerima/dekripsi/${currentDataId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        credentials: "same-origin"
+      })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        closeModal();
+
+        if (data.success) {
+          const cell = currentTarget === "nik"
+            ? currentRow.querySelector(".nik-cell")
+            : currentRow.querySelector(".hp-cell");
+
+          const value = currentTarget === "nik" ? data.nik : data.nomor_hp;
+
+          if (cell) {
+            cell.innerHTML = value || "-";
+            cell.classList.add("decrypted-text");
+          }
+
+          if (currentBtn) {
+            currentBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+                <line x1="3" y1="3" x2="21" y2="21"/>
+              </svg>
+            `;
+            currentBtn.classList.add("is-open");
+            currentBtn.title = currentTarget === "nik"
+              ? "Sembunyikan NIK"
+              : "Sembunyikan No HP";
+          }
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Gagal",
+            text: data.message || "Dekripsi gagal.",
+            confirmButtonColor: "#2563eb"
+          });
+        }
+      })
+      .catch(() => {
+        closeModal();
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Gagal terhubung ke server.",
+          confirmButtonColor: "#2563eb"
+        });
+      });
+    });
+    btnCancel.onclick = closeModal;
+    dekripsiModal.onclick = (e) => { if (e.target === dekripsiModal) closeModal(); };
+    document.querySelector("#dekripsiModal .modal-box")
+            .addEventListener("click", e => e.stopPropagation());
+
+  });
+</script>
 
 {% endblock %}

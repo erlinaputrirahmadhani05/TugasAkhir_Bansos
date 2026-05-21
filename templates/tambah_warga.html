@@ -3,7 +3,6 @@
   <div class="content-card">
     <form class="user-form" method="POST">
 
-  <!-- BARIS 1 -->
   <div class="form-row">
     <div class="form-group">
       <label>NIK <span class="required">*</span></label>
@@ -18,7 +17,6 @@
     </div>
   </div>
 
-  <!-- BARIS 2 -->
   <div class="form-row">
     <div class="form-group">
       <label>Tanggal Lahir <span class="required">*</span></label>
@@ -33,7 +31,6 @@
     </div>
   </div>
 
-  <!-- BARIS 3 -->
   <div class="form-row">
     <div class="form-group">
       <label>RT <span class="required">*</span></label>
@@ -51,7 +48,6 @@
     </div>
   </div>
 
-  <!-- BARIS 4 -->
   <div class="form-row">
     <div class="form-group">
       <label>Petugas Lapangan <span class="required">*</span></label>
@@ -65,12 +61,8 @@
   {% endfor %}
 </select>
     </div>
-
-    <!-- kosongin kanan biar sejajar -->
     <div class="form-group"></div>
   </div>
-
-
       <div class="form-actions">
         <a href="{{ url_for('warga_penerima') }}" class="btn-cancel">Batal</a>
         <button type="submit" class="btn-submit">Simpan Data</button>

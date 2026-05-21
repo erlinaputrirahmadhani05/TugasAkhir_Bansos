@@ -87,21 +87,49 @@
   document.addEventListener("DOMContentLoaded", function () {
     // ================= SEARCH =================
     const searchInput = document.getElementById("searchUser");
+    const tbody = document.querySelector("#userTable tbody");
+
+    // buat row pesan tidak ditemukan
+    const emptyRow = document.createElement("tr");
+    emptyRow.id = "emptyMessage";
+    emptyRow.style.display = "none";
+    emptyRow.innerHTML = `
+      <td colspan="6" class="text-center">
+        Akun tidak ditemukan
+      </td>
+    `;
+    tbody.appendChild(emptyRow);
 
     if (searchInput) {
       searchInput.addEventListener("keyup", function () {
         let filter = this.value.toLowerCase();
-        let rows = document.querySelectorAll("#userTable tbody tr");
+        let rows = document.querySelectorAll("#userTable tbody tr:not(#emptyMessage)");
+
+        let visibleCount = 0;
 
         rows.forEach((row) => {
           let nama = row.cells[1].innerText.toLowerCase();
           let email = row.cells[2].innerText.toLowerCase();
           let role = row.cells[3].innerText.toLowerCase();
 
-          let match = nama.includes(filter) || email.includes(filter) || role.includes(filter);
+          let match =
+            nama.includes(filter) ||
+            email.includes(filter) ||
+            role.includes(filter);
 
           row.style.display = match ? "" : "none";
+
+          if (match) {
+            visibleCount++;
+          }
         });
+
+        // tampilkan pesan jika tidak ada data cocok
+        if (visibleCount === 0) {
+          emptyRow.style.display = "";
+        } else {
+          emptyRow.style.display = "none";
+        }
       });
     }
   });

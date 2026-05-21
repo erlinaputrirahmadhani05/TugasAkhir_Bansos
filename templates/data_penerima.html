@@ -1,33 +1,37 @@
-{% extends "dashboard.html" %} {% block page_title %}Data Penerima{% endblock %} {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-{% endblock %} {% block content %}
-<div class="page-content">
+{% extends "dashboard.html" %} 
+{% block page_title %}Data Penerima{% endblock %} 
 
-  <!-- ================= SUPERADMIN & ADMIN ================= -->
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+{% endblock %} 
+
+{% block content %}
+<div class="page-content">
   {% if session.role|lower in ['superadmin', 'admin'] %}
 
   <div class="filter-bar">
-
-    <!-- KIRI -->
     <div class="filter-left">
       {% if session.role|lower == 'superadmin' %}
+      <!-- Button Excel -->
       <a href="{{ url_for('download_laporan') }}" class="btn-download">
         Download Laporan Excel
       </a>
+      
+      <!-- Button PDF Baru -->
+      <a href="{{ url_for('download_laporan_pdf') }}" class="btn-download" style="background: #3eb63e; margin-left: 8px;">
+        Download Laporan PDF
+      </a>
+      
       {% elif session.role|lower == 'admin' %}
-      <input type="text" id="searchPenerima" placeholder="Cari Data Penerima..." class="search-input" />
+      <input type="text" class="search-penerima search-input" placeholder="Cari Data Penerima..." />
       {% endif %}
     </div>
 
-    <!-- TENGAH (HANYA SUPERADMIN) -->
-    {% if session.role|lower == 'superadmin' %}
-    <div class="filter-center">
-      <input type="text" id="searchPenerima" placeholder="Cari Data Penerima..." class="search-input" />
-    </div>
-    {% endif %}
-
-    <!-- KANAN -->
     <div class="filter-right">
+      {% if session.role|lower == 'superadmin' %}
+      <input type="text" class="search-penerima search-input" placeholder="Cari Data Penerima..." />
+      {% endif %}
+
       <select id="filterTahap" class="search-input">
         <option value="" {% if not tahap_selected %}selected{% endif %}>Semua Tahap</option>
         <option value="1" {% if tahap_selected == '1' %}selected{% endif %}>Tahap 1 : Jan - Mar</option>
@@ -38,68 +42,114 @@
 
       <select id="filterTahun" class="search-input">
         <option value="" {% if not tahun_selected %}selected{% endif %}>Semua Tahun</option>
-        <option value="2026" {% if tahun_selected == '2026' %}selected{% endif %}>2026</option>
-        <option value="2027" {% if tahun_selected == '2027' %}selected{% endif %}>2027</option>
+        {% for t in tahun_list %}
+        <option value="{{ t.tahun }}" {% if tahun_selected == t.tahun|string %}selected{% endif %}>
+          {{ t.tahun }}
+        </option>
+        {% endfor %}
       </select>
 
-      <button id="btnFilter" class="btn-download" style="background: #2563eb">
-        Filter
-      </button>
+      <button id="btnFilter" class="btn-download" style="background: #2563eb">Filter</button>
     </div>
-
   </div>
 
-  <!-- ================= PETUGAS ================= -->
   {% else %}
-
+  <!-- PETUGAS LAPANGAN -->
   <div class="filter-bar">
     <div class="filter-left">
-      <input type="text" id="searchPenerima" placeholder="Cari Data Penerima..." class="search-input" />
+      <input type="text" class="search-penerima search-input" placeholder="Cari Data Penerima..." />
+    </div>
+    <div class="filter-right">
+      <select id="filterTahap" class="search-input">
+        <option value="" {% if not tahap_selected %}selected{% endif %}>Semua Tahap</option>
+        <option value="1" {% if tahap_selected == '1' %}selected{% endif %}>Tahap 1 : Jan - Mar</option>
+        <option value="2" {% if tahap_selected == '2' %}selected{% endif %}>Tahap 2 : Apr - Jun</option>
+        <option value="3" {% if tahap_selected == '3' %}selected{% endif %}>Tahap 3 : Jul - Sep</option>
+        <option value="4" {% if tahap_selected == '4' %}selected{% endif %}>Tahap 4 : Okt - Des</option>
+      </select>
+      <select id="filterTahun" class="search-input">
+        <option value="" {% if not tahun_selected %}selected{% endif %}>Semua Tahun</option>
+        {% for t in tahun_list %}
+        <option value="{{ t.tahun }}" {% if tahun_selected == t.tahun|string %}selected{% endif %}>
+          {{ t.tahun }}
+        </option>
+        {% endfor %}
+      </select>
+      <button id="btnFilter" class="btn-download" style="background: #2563eb">Filter</button>
     </div>
   </div>
-
   {% endif %}
 
-</div>
-
-    <div class="table-wrapper">
-      <table class="data-table" id="penerimaTable">
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Nama</th>
-            <th>NIK</th>
-            <th>RT</th>
-            <th>Petugas</th>
-            <th>Tanggal Terima</th>
-            <th>Tahap</th>
-            <th>Bukti</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% if data %} {% for d in data %}
+  <div class="table-wrapper">
+    <table class="data-table" id="penerimaTable">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama</th>
+          <th>NIK</th>
+          <th>RT</th>
+          <th>Petugas</th>
+          <th>Tanggal Terima</th>
+          <th>Tahap</th>
+          <th>Bukti</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if data %} 
+          {% for d in data %}
           <tr>
             <td>{{ loop.index }}</td>
             <td>{{ d.nama }}</td>
-            <td>{{ d.nik }}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                <span class="nik-cell" 
+                      data-id="{{ d.id }}"
+                      data-nik-masked="{{ '*' * (d.nik|length - 3) }}{{ d.nik[-3:] if d.nik|length >= 3 else d.nik }}"
+                      data-nik-encrypted="{{ d.nik }}">
+                  {{ '*' * (d.nik|length - 3) }}{{ d.nik[-3:] if d.nik|length >= 3 else d.nik }}
+                </span>
+                
+                {% if session.role|lower in ['superadmin', 'admin'] %}
+                <button type="button" class="btn-dekripsi-eye" 
+                        data-id="{{ d.id }}" 
+                        title="Lihat NIK lengkap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+                {% endif %}
+              </div>
+            </td>
+
             <td style="text-align: center">{{ d.rt }}</td>
             <td style="text-align: center">{{ d.petugas_lapangan }}</td>
             <td style="text-align: center">{{ d.tanggal_terima or '-' }}</td>
             <td style="text-align: center">{{ d.tahap or '-' }}</td>
             <td style="text-align: center">
               {% if d.bukti %}
-              <button type="button" class="btn-lihat-bukti lihat-bukti" data-img="{{ url_for('get_bukti', filename=d.bukti) }}"> Lihat Bukti </a>
-              {% else %} - {% endif %}
+              <button type="button" class="btn-lihat-bukti lihat-bukti"
+                      data-img="{{ url_for('get_bukti', filename=d.bukti) }}">
+                Lihat Bukti
+              </button>
+              {% else %} 
+                - 
+              {% endif %}
             </td>
           </tr>
-          {% endfor %} {% else %}
-          <tr>
-            <td colspan="8" class="text-center">Belum ada data penerima</td>
-          </tr>
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
+          {% endfor %} 
+          <tr id="notFoundRow" style="display: none;">
+  <td colspan="8" style="text-align:center; padding:20px; color:#64748b;">
+    Data tidak ditemukan
+  </td>
+</tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center">Belum ada data penerima</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
   </div>
 </div>
 <div id="imageModal" class="modal">
@@ -111,89 +161,265 @@
     </div>
   </div>
 </div>
+<div id="dekripsiModal" class="modal">
+  <div class="modal-box" style="max-width: 420px;">
+    <div style="text-align:center; margin-bottom: 12px;">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 8px; display:block;">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <h3 style="margin:0 0 6px; font-size:16px; color:#1e293b;">Konfirmasi Dekripsi</h3>
+      <p style="margin:0; font-size:14px; color:#64748b;">
+        Apakah Anda ingin melihat NIK secara lengkap?
+      </p>
+    </div>
+
+    <div id="hasilDekripsi" style="display:none; background:#f1f5f9; border-radius:8px; padding:12px 16px; margin-bottom:14px; text-align:left;">
+      <p style="margin:0 0 6px; font-size:13px; color:#475569;">
+        <strong>NIK:</strong> <span id="nikResult" style="font-family:monospace;"></span>
+      </p>
+      <p style="margin:0; font-size:13px; color:#475569;">
+        <strong>No HP:</strong> <span id="hpResult" style="font-family:monospace;"></span>
+      </p>
+    </div>
+
+    <div id="loadingDekripsi" style="display:none; text-align:center; padding:8px 0;">
+      <span style="font-size:13px; color:#64748b;">Sedang mendekripsi...</span>
+    </div>
+
+    <div class="modal-actions" id="dekripsiActions">
+      <button id="btnDekripsiConfirm" class="btn-unduh" style="background:#2563eb;">Dekripsi</button>
+      <button id="btnDekripsiCancel" class="btn-batal">Batal</button>
+    </div>
+
+    <div id="dekripsiDone" style="display:none; text-align:center; margin-top:6px;">
+      <button id="btnDekripsiClose" class="btn-batal">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .btn-dekripsi-eye {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: none;
+    background-color: #dbeafe;
+    color: #1e40af;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .btn-dekripsi-eye:hover {
+    background-color: #2563eb;
+    color: #fff;
+  }
+  .nik-cell {
+    font-family: monospace;
+    letter-spacing: 0.04em;
+  }
+</style>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    // ================= SEARCH =================
-    const searchInput = document.getElementById("searchPenerima");
-    if (searchInput) {
-      searchInput.addEventListener("keyup", function () {
-        let filter = this.value.toLowerCase();
-        let rows = document.querySelectorAll("#penerimaTable tbody tr");
+    const searchInputs = document.querySelectorAll(".search-penerima");
 
-        rows.forEach((row) => {
-          // CEK apakah ini baris data (bukan header tahap)
-          if (row.cells.length < 8) return;
+searchInputs.forEach(input => {
+  input.addEventListener("keyup", function () {
 
-          let nama = row.cells[1].innerText.toLowerCase();
-          let nik = row.cells[2].innerText.toLowerCase();
-          let rt = row.cells[3].innerText.toLowerCase();
+    let filter = this.value.toLowerCase();
+    let visibleRows = 0;
 
-          let match = nama.includes(filter) || nik.includes(filter) || rt.includes(filter);
-          row.style.display = match ? "" : "none";
-        });
-      });
+    document.querySelectorAll("#penerimaTable tbody tr").forEach((row) => {
+
+      // skip row pesan
+      if (row.id === "notFoundRow") return;
+
+      if (row.cells.length < 8) return;
+
+      let nama = row.cells[1].innerText.toLowerCase();
+      let nik  = row.cells[2].innerText.toLowerCase();
+      let rt   = row.cells[3].innerText.toLowerCase();
+
+      const isMatch =
+        nama.includes(filter) ||
+        nik.includes(filter) ||
+        rt.includes(filter);
+
+      row.style.display = isMatch ? "" : "none";
+
+      if (isMatch) visibleRows++;
+    });
+
+    const notFoundRow = document.getElementById("notFoundRow");
+
+    if (notFoundRow) {
+      notFoundRow.style.display = visibleRows === 0 ? "" : "none";
     }
 
+  });
+});
     const btnFilter = document.getElementById("btnFilter");
-
     if (btnFilter) {
       btnFilter.addEventListener("click", function () {
         const tahap = document.getElementById("filterTahap").value;
         const tahun = document.getElementById("filterTahun").value;
-
         let url = new URL(window.location.href);
-
-        if (tahap) {
-          url.searchParams.set("tahap", tahap);
-        } else {
-          url.searchParams.delete("tahap");
-        }
-
-        if (tahun) {
-          url.searchParams.set("tahun", tahun);
-        } else {
-          url.searchParams.delete("tahun");
-        }
-
+        if (tahap) url.searchParams.set("tahap", tahap);
+        else url.searchParams.delete("tahap");
+        if (tahun) url.searchParams.set("tahun", tahun);
+        else url.searchParams.delete("tahun");
         window.location.href = url.toString();
       });
     }
-
-    // ================= MODAL =================
-    const modal = document.getElementById("imageModal");
+    const imageModal = document.getElementById("imageModal");
     const modalImg = document.getElementById("imgPreview");
     const closeBtn = document.getElementById("closeBtn");
     const downloadBtn = document.getElementById("downloadBtn");
 
-    console.log("JS jalan");
-
-    document.querySelectorAll(".lihat-bukti").forEach((link) => {
-      link.addEventListener("click", function (e) {
+    document.querySelectorAll(".lihat-bukti").forEach((btn) => {
+      btn.addEventListener("click", function (e) {
         e.preventDefault();
-
         const imgSrc = this.getAttribute("data-img");
-
-        console.log("klik:", imgSrc);
-
-        modal.style.display = "flex";
+        imageModal.style.display = "flex";
         modalImg.src = imgSrc;
         downloadBtn.href = imgSrc;
       });
     });
+    closeBtn.onclick = () => imageModal.style.display = "none";
+    imageModal.onclick = (e) => { if (e.target === imageModal) imageModal.style.display = "none"; };
 
-    // tombol batal
-    closeBtn.onclick = function () {
-      modal.style.display = "none";
-    };
+    let currentDataId = null;
+    let currentRow = null;
 
-    // klik luar modal
-    modal.onclick = function (e) {
-      if (e.target === modal) {
-        modal.style.display = "none";
-      }
-    };
+    const dekripsiModal = document.getElementById("dekripsiModal");
+    const loadingDekripsi = document.getElementById("loadingDekripsi");
+    const dekripsiActions = document.getElementById("dekripsiActions");
+    const btnDekripsiConfirm = document.getElementById("btnDekripsiConfirm");
+    const btnDekripsiCancel = document.getElementById("btnDekripsiCancel");
+
+    function resetDekripsiModal() {
+      loadingDekripsi.style.display = "none";
+      dekripsiActions.style.display = "flex";
+    }
+
+    function getMaskedNik(nik) {
+      if (!nik || nik.length < 4) return "********";
+      return ''.repeat(nik.length - 3) + nik.slice(-3);
+    }
+    const table = document.getElementById("penerimaTable");
+    if (table) {
+      table.addEventListener("click", function(e) {
+        const btn = e.target.closest(".btn-dekripsi-eye");
+        if (!btn) return;
+
+        currentDataId = btn.getAttribute("data-id");
+        currentRow = btn.closest("tr");
+
+        const nikCell = currentRow.querySelector(".nik-cell");
+        const isDecrypted = nikCell && !nikCell.innerText.includes('*');
+
+        if (isDecrypted) {
+          const masked = nikCell.getAttribute("data-nik-masked") || getMaskedNik(nikCell.innerText);
+          nikCell.innerHTML = masked;
+          nikCell.style.color = ""; 
+
+          btn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          `;
+        } else {
+          resetDekripsiModal();
+          dekripsiModal.style.display = "flex";
+
+          if (nikCell && !nikCell.hasAttribute("data-nik-masked")) {
+            nikCell.setAttribute("data-nik-masked", nikCell.innerText);
+          }
+        }
+      });
+    }
+    
+    if (btnDekripsiConfirm) {
+      btnDekripsiConfirm.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        if (!currentDataId || !currentRow) {
+          Swal.fire("Error", "ID tidak valid.", "error");
+          return;
+        }
+
+        dekripsiActions.style.display = "none";
+        loadingDekripsi.style.display = "block";
+
+        fetch(`/data-penerima/dekripsi/${currentDataId}`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest" 
+          },
+          credentials: "same-origin"
+        })
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          loadingDekripsi.style.display = "none";
+
+          if (data.success === true) {
+            const nikCell = currentRow.querySelector(".nik-cell");
+            if (nikCell) {
+              nikCell.innerHTML = data.nik || "-";
+              nikCell.style.color = "#1e40af";
+              nikCell.style.fontFamily = "monospace";
+              nikCell.style.letterSpacing = "0.05em";
+            }
+
+            const eyeBtn = currentRow.querySelector(".btn-dekripsi-eye");
+            if (eyeBtn) {
+              eyeBtn.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                  <line x1="3" y1="3" x2="21" y2="21"/>
+                </svg>
+              `;
+            }
+
+            dekripsiModal.style.display = "none";
+          } else {
+            Swal.fire("Gagal", data.message || "Dekripsi gagal.", "error");
+            dekripsiActions.style.display = "flex";
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          loadingDekripsi.style.display = "none";
+          dekripsiActions.style.display = "flex";
+          Swal.fire("Error", "Gagal terhubung ke server.", "error");
+        });
+      });
+    }
+
+    if (btnDekripsiCancel) {
+      btnDekripsiCancel.onclick = () => {
+        dekripsiModal.style.display = "none";
+        resetDekripsiModal();
+      };
+    }
+
+    if (dekripsiModal) {
+      dekripsiModal.onclick = (e) => {
+        if (e.target === dekripsiModal) {
+          dekripsiModal.style.display = "none";
+          resetDekripsiModal();
+        }
+      };
+    }
   });
 </script>
-
 {% endblock %}

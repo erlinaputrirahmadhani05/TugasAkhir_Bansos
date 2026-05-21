@@ -148,66 +148,110 @@
             <!-- ================= STATISTIK DASHBOARD ================= -->
 
             {% if session.get('role', '').lower() == 'petugas lapangan' %}
-            <!-- ===== PETUGAS LAPANGAN ===== -->
-            <div class="dashboard-stats-row">
-              <div class="dashboard-stat-card">
-                <div class="stat-icon">
-                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                    <path d="M2 17l10 5 10-5"></path>
-                    <path d="M2 12l10 5 10-5"></path>
+            <div class="admin-stats-row">
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon icon-blue">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
                   </svg>
                 </div>
-                <p class="stat-info-label">Total Penerima Bantuan yang Anda Input</p>
-                <p class="stat-info-value stat-penerima">{{ jumlah_penyaluran|default(0) }}</p>
-                <small>orang</small>
+                <div class="admin-stat-text">
+                  <span class="admin-stat-label">Total Penerima Bantuan yang Anda Input</span>
+                  <span class="admin-stat-value text-blue">{{ jumlah_penyaluran|default(0) }}</span>
+                  <span class="admin-stat-unit">orang</span>
+                </div>
+              </div>
+
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon icon-amber">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                  </svg>
+                </div>
+                <div class="admin-stat-text">
+                  <span class="admin-stat-label">Persentase Warga Anda yang Mendapat Bantuan</span>
+                  <span class="admin-stat-value text-amber">{{ persentase_bantuan_petugas|default(0) }}%</span>
+                  <span class="admin-stat-unit">dari total warga yang Anda tangani</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="admin-charts-row">
+              <div class="admin-chart-card">
+                <h3 class="admin-chart-title">Penerima Bantuan per Kuartal (Input Anda)</h3>
+                <canvas id="kuartalChartPetugas"></canvas>
               </div>
             </div>
 
             {% elif session.get('role', '').lower() == 'superadmin' %}
-            <!-- ===== SUPERADMIN ===== -->
-            <div class="dashboard-stats-row">
-              <div class="dashboard-stat-card">
-                <div class="stat-icon">
-                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <div class="admin-stats-row">
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon icon-blue">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
                   </svg>
                 </div>
-                <p class="stat-info-label">Total Akun Terdaftar Aktif</p>
-                <p class="stat-info-value stat-aktif">{{ jumlah_akun_aktif|default(0) }}</p>
-                <small>akun</small>
+                <div class="admin-stat-text">
+                  <span class="admin-stat-label">Akun Terdaftar Aktif</span>
+                  <span class="admin-stat-value text-blue">{{ jumlah_akun_aktif|default(0) }}</span>
+                  <span class="admin-stat-unit">akun</span>
+                </div>
               </div>
-              <div class="dashboard-stat-card">
-                <div class="stat-icon">
-                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
+
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon icon-green">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                   </svg>
                 </div>
-                <p class="stat-info-label">Total Warga Terdaftar Aktif</p>
-                <p class="stat-info-value stat-orange">{{ jumlah_warga_aktif|default(0) }}</p>
-                <small>orang</small>
+                <div class="admin-stat-text">
+                  <span class="admin-stat-label">Warga Terdaftar Aktif</span>
+                  <span class="admin-stat-value text-green">{{ jumlah_warga_aktif|default(0) }}</span>
+                  <span class="admin-stat-unit">orang</span>
+                </div>
               </div>
-              <div class="dashboard-stat-card">
-                <div class="stat-icon">
-                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                    <path d="M2 17l10 5 10-5"></path>
-                    <path d="M2 12l10 5 10-5"></path>
+
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon icon-blue">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
                   </svg>
                 </div>
-                <p class="stat-info-label">Total Penerima Bantuan</p>
-                <p class="stat-info-value stat-penerima">{{ jumlah_penyaluran|default(0) }}</p>
-                <small>orang</small>
+                <div class="admin-stat-text">
+                  <span class="admin-stat-label">Total Penerima Bantuan</span>
+                  <span class="admin-stat-value text-blue">{{ jumlah_penyaluran|default(0) }}</span>
+                  <span class="admin-stat-unit">orang</span>
+                </div>
+              </div>
+
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon icon-amber">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                  </svg>
+                </div>
+                <div class="admin-stat-text">
+                  <span class="admin-stat-label">Persentase Mendapat Bantuan</span>
+                  <span class="admin-stat-value text-amber">{{ persentase_bantuan|default(0) }}%</span>
+                  <span class="admin-stat-unit">dari total warga aktif</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="admin-charts-row">
+              <div class="admin-chart-card">
+                <h3 class="admin-chart-title">Penerima Bantuan per Kuartal</h3>
+                <canvas id="kuartalChartSuperadmin"></canvas>
               </div>
             </div>
 
             {% elif session.get('role', '').lower() == 'admin' %}
-            <!-- ===== ADMIN ===== -->
-
-            <!-- 4 Stat Cards Horizontal -->
             <div class="admin-stats-row">
               <div class="admin-stat-card">
                 <div class="admin-stat-icon icon-green">
@@ -267,7 +311,6 @@
               </div>
             </div>
 
-            <!-- 2 Grafik -->
             <div class="admin-charts-row">
               <div class="admin-chart-card">
                 <h3 class="admin-chart-title">Penerima Bantuan per Kuartal</h3>
@@ -276,63 +319,54 @@
             </div>
 
             {% endif %}
-            <!-- ===== AKHIR STATISTIK ===== -->
-
           </div>
           {% endblock %}
         </div>
       </main>
     </div>
 
-    <!-- ===== CHART.JS — di luar block content agar selalu termuat ===== -->
-    {% if session.get('role', '').lower() == 'admin' %}
+    {% if session.get('role', '').lower() in ['admin', 'superadmin', 'petugas lapangan'] %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-      var penerimaKuartal  = {{ penerima_per_kuartal | default([0,0,0,0]) | tojson }};
+      var penerimaKuartal        = {{ penerima_per_kuartal | default([0,0,0,0]) | tojson }};
+      var penerimaKuartalPetugas = {{ penerima_per_kuartal_petugas | default([0,0,0,0]) | tojson }};
 
       var isDark    = document.documentElement.classList.contains('dark');
       var textColor = isDark ? '#b0b0b0' : '#6b7280';
       var gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
-      var rtColors  = ['#1D9E75','#378ADD','#BA7517','#A32D2D','#534AB7','#0F6E56','#D85A30','#185FA5'];
+
+      function buatGrafik(canvasId, data) {
+        var ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Jan \u2013 Mar', 'Apr \u2013 Jun', 'Jul \u2013 Sep', 'Okt \u2013 Des'],
+            datasets: [{
+              label: 'Penerima',
+              data: data,
+              backgroundColor: ['#1D9E75', '#378ADD', '#BA7517', '#534AB7'],
+              borderRadius: 6,
+              borderSkipped: false
+            }]
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false } },
+              y: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor }, beginAtZero: true }
+            }
+          }
+        });
+      }
 
       document.addEventListener('DOMContentLoaded', function () {
-
-        // Grafik — Penerima per Kuartal
-        var ctxKuartal = document.getElementById('kuartalChart');
-        if (ctxKuartal) {
-          new Chart(ctxKuartal, {
-            type: 'bar',
-            data: {
-              labels: ['Jan – Mar', 'Apr – Jun', 'Jul – Sep', 'Okt – Des'],
-              datasets: [{
-                label: 'Penerima',
-                data: penerimaKuartal,
-                backgroundColor: ['#1D9E75','#378ADD','#BA7517','#534AB7'],
-                borderRadius: 6,
-                borderSkipped: false
-              }]
-            },
-            options: {
-              plugins: { legend: { display: false } },
-              scales: {
-                x: {
-                  ticks: { color: textColor, font: { size: 11 } },
-                  grid: { display: false }
-                },
-                y: {
-                  ticks: { color: textColor, font: { size: 11 } },
-                  grid: { color: gridColor },
-                  beginAtZero: true
-                }
-              }
-            }
-          });
-        }
-
+        buatGrafik('kuartalChart',          penerimaKuartal);
+        buatGrafik('kuartalChartSuperadmin', penerimaKuartal);
+        buatGrafik('kuartalChartPetugas',   penerimaKuartalPetugas);
       });
     </script>
     {% endif %}
-
     <!-- Script Sidebar Toggle -->
     <script>
       (function () {
