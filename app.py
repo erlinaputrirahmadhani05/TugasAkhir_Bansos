@@ -267,13 +267,28 @@ def dashboard():
 
         # ===== DATA PENERIMA TERBARU ====
         cursor.execute("""
-            SELECT dp.nama, dp.nik, u.nama_lengkap as nama_petugas, dp.created_at
+            SELECT 
+                w.nama_encrypted,
+                w.nik_encrypted,
+                u.nama_lengkap AS nama_petugas,
+                dp.created_at
             FROM data_penerima dp
+            JOIN warga_penerima w ON dp.warga_id = w.id
             LEFT JOIN users u ON dp.input_by = u.id
-            ORDER BY dp.created_at DESC 
+            ORDER BY dp.created_at DESC
             LIMIT 5
         """)
-        penerima_terbaru = cursor.fetchall()
+
+        rows = cursor.fetchall()
+
+        penerima_terbaru = []
+        for row in rows:
+            penerima_terbaru.append({
+                "nama": decrypt_data(row[0]) if row[0] else "-",
+                "nik": decrypt_data(row[1]) if row[1] else "-",
+                "nama_petugas": row[2],
+                "created_at": row[3]
+            })
 
         # ===== STATUS WARGA ====
         cursor.execute("""
