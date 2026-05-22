@@ -901,50 +901,6 @@ def generate_periode():
 def get_bukti(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-@app.route('/data-penerima/evaluasi')
-@require_login
-def evaluasi_penyaluran():
-    if session.get('role','').lower() != 'admin':
-        flash("Hanya admin yang dapat melihat evaluasi", "danger")
-        return redirect(url_for('dashboard'))
-
-    tahun = request.args.get('tahun')
-    tahap = request.args.get('tahap')
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    cursor.execute("SELECT * FROM warga_penerima ORDER BY nama_encrypted")
-    warga_list = cursor.fetchall()
-
-    for w in warga_list:
-        w['nama'] = decrypt_data(w['nama_encrypted'])
-        w['nik'] = decrypt_data(w['nik_encrypted'])
-
-    cursor.execute("""
-        SELECT warga_id, COUNT(*) as jumlah_penyaluran
-        FROM data_penerima
-        WHERE tahun=%s AND tahap=%s
-        GROUP BY warga_id
-    """, (tahun, tahap))
-    penyaluran = {r['warga_id']: r['jumlah_penyaluran'] for r in cursor.fetchall()}
-
-    hasil = []
-    for w in warga_list:
-        if w['id'] not in penyaluran:
-            status = "Tidak menerima"
-        else:
-            status = "Menerima"
-
-        hasil.append({
-            "id": w['id'],
-            "nama": decrypt_data(w['nama_encrypted']),
-            "nik": decrypt_data(w['nik_encrypted']),
-            "rt": decrypt_data(w["rt_encrypted"]),
-            "status": status
-        })
-
-    return render_template('data_penerima.html', data=hasil)
 
 import io
 import os
