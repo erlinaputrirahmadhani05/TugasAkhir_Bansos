@@ -73,6 +73,20 @@
                 <span>Kelola Akun</span>
               </a>
             </li>
+            <li>
+            <a href="{{ url_for('form_generate_periode') }}"
+                  class="nav-item {% if request.endpoint == 'form_generate_periode' %}active{% endif %}">
+                  
+                    <svg width="20" height="20" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <path d="M12 8v8"></path>
+                        <path d="M8 12h8"></path>
+                    </svg>
+
+                    <span>Generate Periode</span>
+                </a>
+            </li>
             {% endif %}
             {% endif %}
 
@@ -317,9 +331,8 @@
                 <canvas id="kuartalChart"></canvas>
               </div>
             </div>
-
-            {% endif %}
           </div>
+          {% endif %}
           {% endblock %}
         </div>
       </main>

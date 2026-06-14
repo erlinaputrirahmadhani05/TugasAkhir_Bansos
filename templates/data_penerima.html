@@ -13,14 +13,37 @@
     <div class="filter-left">
       {% if session.role|lower == 'superadmin' %}
       <!-- Button Excel -->
-      <a href="{{ url_for('download_laporan') }}" class="btn-download">
-        Download Laporan Excel
-      </a>
-      
-      <!-- Button PDF Baru -->
-      <a href="{{ url_for('download_laporan_pdf') }}" class="btn-download" style="background: #3eb63e; margin-left: 8px;">
-        Download Laporan PDF
-      </a>
+      <form method="GET" action="{{ url_for('download_laporan') }}">
+        <select name="tahun" required>
+            <option value="" selected hidden>-- Pilih Tahun --</option>
+
+            {% for t in tahun_list %}
+            <option value="{{ t.tahun }}">
+                {{ t.tahun }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn-download">
+            Download Excel
+        </button>
+      </form>
+
+      <form method="GET" action="{{ url_for('download_laporan_pdf') }}" style="display:inline;">
+          <select name="tahun" required>
+              <option value="" selected hidden>-- Pilih Tahun --</option>
+
+              {% for t in tahun_list %}
+              <option value="{{ t.tahun }}">
+                  {{ t.tahun }}
+              </option>
+              {% endfor %}
+          </select>
+
+          <button type="submit" class="btn-download" style="background:#3eb63e;">
+              Download PDF
+          </button>
+      </form>
       
       {% elif session.role|lower == 'admin' %}
       <input type="text" class="search-penerima search-input" placeholder="Cari Data Penerima..." />

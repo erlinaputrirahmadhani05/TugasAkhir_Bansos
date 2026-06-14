@@ -1,0 +1,109 @@
+{% extends "dashboard.html" %} {% block page_title %}Generate Periode{% endblock %} {% block breadcrumb %}{% endblock %} {% block content %}
+
+<div class="content-card">
+  <div class="card-header">
+    <h2>Masukkan Tahun Periode</h2>
+  </div>
+
+  <form method="POST" action="{{ url_for('generate_periode') }}">
+    <div class="form-group">
+      <input type="number" name="tahun" min="2025" max="2100" placeholder="Masukkan Tahun" required />
+    </div>
+
+    <div class="form-action">
+      <button type="submit" class="btn-submit">Generate Periode</button>
+    </div>
+  </form>
+</div>
+
+<div class="content-card mt-4">
+  <div class="card-header">
+    <h2>Daftar Periode PKH</h2>
+  </div>
+
+  <div class="table-responsive">
+    <table class="periode-table">
+      <thead>
+        <tr>
+          <th width="70">No</th>
+          <th>Tahun</th>
+          <th>Tahap</th>
+          <th>Status</th>
+          <th width="400">Aksi</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for p in periode_list %}
+        <tr>
+          <td class="text-center">{{ loop.index }}</td>
+
+          <td>
+            <strong>{{ p.tahun }}</strong>
+          </td>
+
+          <td>Tahap {{ p.tahap }}</td>
+
+          <td>
+            {% if p.status == 'aktif' %}
+            <span class="status-badge status-active"> Aktif </span>
+            {% else %}
+            <span class="status-badge status-inactive"> Nonaktif </span>
+            {% endif %}
+          </td>
+
+          <td>
+            <div class="action-group">
+              {% if p.status == 'aktif' %}
+              <a href="{{ url_for('ubah_status_periode', id=p.id) }}" class="btn-action btn-danger"> Nonaktifkan </a>
+              {% else %}
+              <a href="{{ url_for('ubah_status_periode', id=p.id) }}" class="btn-action btn-success"> Aktifkan </a>
+              {% endif %}
+
+              <a href="{{ url_for('edit_periode', id=p.id) }}" class="btn-action btn-warning"> Edit </a>
+
+              <a href="{{ url_for('hapus_periode', id=p.id) }}" class="btn-action btn-delete btn-hapus"> Hapus </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".btn-hapus").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        const url = this.getAttribute("href");
+
+        Swal.fire({
+          title: "Hapus Periode?",
+          text: "Data periode yang dihapus tidak dapat dikembalikan.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#dc2626",
+          cancelButtonColor: "#6b7280",
+          confirmButtonText: "Ya, Hapus",
+          cancelButtonText: "Batal",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            Swal.fire({
+              title: "Berhasil!",
+              text: "Periode berhasil dihapus.",
+              icon: "success",
+              timer: 1200,
+              showConfirmButton: false,
+            }).then(() => {
+              window.location.href = url;
+            });
+          }
+        });
+      });
+    });
+  });
+</script>
+{% endblock %}

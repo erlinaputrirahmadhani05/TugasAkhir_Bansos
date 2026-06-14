@@ -40,21 +40,6 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 # Import utilities
 from lib.password_utils import verify_password
 
-def generate_periode_otomatis(cursor, conn):
-    from datetime import datetime
-    current_year = datetime.now().year
-
-    cursor.execute("SELECT id FROM periode WHERE tahun = %s LIMIT 1", (current_year,))
-    check = cursor.fetchone()
-
-    if not check:
-        for tahap in range(1, 5):
-            cursor.execute("""
-                INSERT INTO periode (tahun, tahap, status, created_at)
-                VALUES (%s, %s, 'aktif', NOW())
-            """, (current_year, tahap))
-
-        conn.commit()
 
 app = Flask(__name__)
 
@@ -700,6 +685,13 @@ def data_penerima():
     cursor.execute("SELECT DISTINCT tahun FROM periode ORDER BY tahun DESC")
     tahun_list = cursor.fetchall()
     
+    cursor.execute("""
+        SELECT id, tahun, tahap
+        FROM periode
+        ORDER BY tahun DESC, tahap ASC
+    """)
+    periode_list = cursor.fetchall()
+        
     cursor.close()
     conn.close()
 
@@ -717,7 +709,7 @@ def data_penerima():
             "bukti": r["bukti"]
         })
 
-    return render_template('data_penerima.html', data=data, tahap_selected=tahap_filter, tahun_selected=tahun_filter, tahun_list=tahun_list)
+    return render_template('data_penerima.html', data=data, tahap_selected=tahap_filter, tahun_selected=tahun_filter, tahun_list=tahun_list, periode_list=periode_list)
 
 @app.route('/data-penerima/dekripsi/<int:data_id>', methods=['POST'])
 @require_login
@@ -764,7 +756,6 @@ def input_data_penerima():
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    generate_periode_otomatis(cursor, conn)
 
     user_id = session.get('user_id')
 
@@ -886,17 +877,20 @@ def generate_periode():
 
     try:
         for tahap in range(1, 5):
+
             cursor.execute("""
-                SELECT id FROM periode 
-                WHERE tahun = %s AND tahap = %s
+                SELECT id
+                FROM periode
+                WHERE tahun=%s AND tahap=%s
             """, (tahun, tahap))
 
             if cursor.fetchone():
-                continue  
+                continue
 
             cursor.execute("""
-                INSERT INTO periode (tahun, tahap, status, created_at)
-                VALUES (%s, %s, 'aktif', NOW())
+                INSERT INTO periode
+                (tahun, tahap, status, created_at)
+                VALUES (%s, %s, 'nonaktif', NOW())
             """, (tahun, tahap))
 
         conn.commit()
@@ -909,7 +903,163 @@ def generate_periode():
     cursor.close()
     conn.close()
 
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('form_generate_periode'))
+
+@app.route('/form-generate-periode')
+@require_login
+def form_generate_periode():
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT *
+        FROM periode
+        ORDER BY tahun DESC, tahap ASC
+    """)
+
+    periode_list = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'generate_periode.html',
+        periode_list=periode_list
+    )
+    
+@app.route('/periode/status/<int:id>')
+@require_login
+def ubah_status_periode(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute(
+        "SELECT status FROM periode WHERE id=%s",
+        (id,)
+    )
+
+    data = cursor.fetchone()
+
+    if data:
+
+        status_baru = (
+            'aktif'
+            if data['status'] == 'nonaktif'
+            else 'nonaktif'
+        )
+
+        cursor.execute("""
+            UPDATE periode
+            SET status=%s
+            WHERE id=%s
+        """, (status_baru, id))
+
+        conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    flash("Status periode berhasil diperbarui", "success")
+
+    return redirect(url_for('form_generate_periode'))
+
+@app.route('/periode/edit/<int:id>', methods=['GET', 'POST'])
+@require_login
+def edit_periode(id):
+
+    if session.get('role','').lower() != 'superadmin':
+        flash("Hanya superadmin yang dapat mengubah periode", "danger")
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+
+        tahun = request.form.get('tahun')
+        tahap = request.form.get('tahap')
+
+        cursor.execute("""
+            SELECT id
+            FROM periode
+            WHERE tahun=%s
+            AND tahap=%s
+            AND id != %s
+        """, (tahun, tahap, id))
+
+        if cursor.fetchone():
+            flash("Periode dengan tahun dan tahap tersebut sudah ada", "danger")
+            return redirect(url_for('edit_periode', id=id))
+
+        cursor.execute("""
+            UPDATE periode
+            SET tahun=%s,
+                tahap=%s
+            WHERE id=%s
+        """, (tahun, tahap, id))
+
+        conn.commit()
+
+        flash("Periode berhasil diperbarui", "success")
+
+        cursor.close()
+        conn.close()
+
+        return redirect(url_for('form_generate_periode'))
+
+    cursor.execute(
+        "SELECT * FROM periode WHERE id=%s",
+        (id,)
+    )
+
+    periode = cursor.fetchone()
+
+    if not periode:
+        flash("Data periode tidak ditemukan", "danger")
+        return redirect(url_for('form_generate_periode'))
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'edit_periode.html',
+        periode=periode
+    )
+    
+@app.route('/periode/hapus/<int:id>')
+@require_login
+def hapus_periode(id):
+
+    if session.get('role', '').lower() != 'superadmin':
+        flash("Hanya superadmin yang dapat menghapus periode", "danger")
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+
+        cursor.execute("""
+            DELETE FROM periode
+            WHERE id=%s
+        """, (id,))
+
+        conn.commit()
+
+        flash("Periode berhasil dihapus", "success")
+
+    except Exception as e:
+
+        conn.rollback()
+
+        flash(f"Gagal menghapus periode: {e}", "danger")
+
+    cursor.close()
+    conn.close()
+
+    return redirect(url_for('form_generate_periode'))
 
 @app.route('/bukti/<filename>')
 @require_login
@@ -928,31 +1078,39 @@ from reportlab.lib import colors # Jika masih dibutuhkan untuk modul lain
 @require_login
 @require_superadmin
 def download_laporan():
+    tahun = request.args.get('tahun')
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-
-    tahun_sekarang = datetime.now().year
-
-    cursor.execute("SELECT * FROM warga_penerima ORDER BY nama_encrypted")
+    cursor.execute("""
+       SELECT
+            id,
+            nama_encrypted,
+            nik_encrypted,
+            rt_encrypted
+        FROM warga_penerima
+    """)
     semua_warga = cursor.fetchall()
 
     cursor.execute("""
-        SELECT 
+    SELECT
             dp.warga_id,
-            p.tahap,                    
+            p.tahap,
             dp.tanggal_terima,
             dp.bukti_terima_path,
             p.tahun
         FROM data_penerima dp
-        LEFT JOIN periode p ON dp.periode_id = p.id
+        JOIN periode p
+            ON dp.periode_id = p.id
         WHERE p.tahun = %s
-          AND p.status = 'aktif'
-        ORDER BY p.tahap ASC, dp.tanggal_terima ASC
-    """, (tahun_sekarang,))
+        ORDER BY p.tahap ASC
+    """, (tahun,))
 
     penyaluran = cursor.fetchall()
-    cursor.close()
-    conn.close()
+
+    tahun = request.args.get('tahun')
+
+    tahun_laporan = tahun if tahun else 'Tidak_Diketahui'
 
     tahap_dict = {1: [], 2: [], 3: [], 4: []}
     warga_menerima = set()
@@ -982,7 +1140,7 @@ def download_laporan():
         workbook = writer.book
 
         # Palette Warna Profesional (Navy & Grey Modern)
-        warna_header = '#1A5276'
+        warna_header = "#2078AF"
         warna_zebra = '#F9F9F9'
         warna_border = '#D3D3D3'
 
@@ -1020,15 +1178,17 @@ def download_laporan():
             writer.sheets[sheet_name] = ws
 
             # Pengaturan Lebar Kolom yang Ideal
-            ws.set_column(0, 0, 6)   # No
-            ws.set_column(1, 1, 30)  # Nama Lengkap
-            ws.set_column(2, 2, 22)  # NIK
-            ws.set_column(3, 3, 10)  # RT
-            ws.set_column(4, 4, 20)  # Tanggal Terima
-            ws.set_column(5, 5, 40)  # Bukti Gambar
+            ws.set_column(0, 0, 6)
+            ws.set_column(1, 1, 12)   # Tahun
+            ws.set_column(2, 2, 10)   # Tahap
+            ws.set_column(3, 3, 30)   # Nama
+            ws.set_column(4, 4, 22)   # NIK
+            ws.set_column(5, 5, 10)   # RT
+            ws.set_column(6, 6, 20)   # Tanggal
+            ws.set_column(7, 7, 40)   # Bukti
 
             # Menulis Header Tabel
-            headers = ["No", "Nama Lengkap", "NIK", "RT", "Tanggal Terima", "Bukti Terima"]
+            headers = ["No", "Tahun","Tahap","Nama Lengkap", "NIK", "RT", "Tanggal Terima", "Bukti Terima"]
             for col, header in enumerate(headers):
                 ws.write(0, col, header, header_format)
 
@@ -1053,21 +1213,26 @@ def download_laporan():
 
                 # Tulis data ke dalam sel excel
                 ws.write(row_idx, 0, idx, fmt_center)
-                ws.write(row_idx, 1, nama_warga, fmt_left)
-                # Gunakan write_string untuk NIK agar angka 0 di depan tidak hilang dan tidak berformat eksponen
-                ws.write_string(row_idx, 2, nik_warga, fmt_center)
-                ws.write_string(row_idx, 3, rt_warga, fmt_center)
-                ws.write(row_idx, 4, tgl_terima, fmt_center)
-                ws.write_blank(row_idx, 5, None, fmt_center)
+                ws.write(row_idx, 1, p['tahun'], fmt_center)
+                ws.write(row_idx, 2, p['tahap'], fmt_center)
+                ws.write(row_idx, 3, nama_warga, fmt_left)
+                ws.write_string(row_idx, 4, nik_warga, fmt_center)
+                ws.write_string(row_idx, 5, rt_warga, fmt_center)
+                ws.write(row_idx, 6, tgl_terima, fmt_center)
+                ws.write_blank(row_idx, 7, None, fmt_center)
 
                 # Proses penyisipan gambar bukti fisik
+                image_path = None
                 if p.get("bukti_terima_path"):
-                    image_path = os.path.join(app.config['UPLOAD_FOLDER'], p['bukti_terima_path'])
+                    image_path = os.path.join(
+                        app.config['UPLOAD_FOLDER'],
+                        p['bukti_terima_path']
+                    )
                     if os.path.exists(image_path):
                         try:
                             # Mengatur tinggi baris agar gambar termuat dengan proporsional
                             ws.set_row(row_idx, 110)
-                            ws.insert_image(row_idx, 5, image_path, {
+                            ws.insert_image(row_idx, 7, image_path, {
                                 'x_scale': 0.65,
                                 'y_scale': 0.65,
                                 'x_offset': 12,
@@ -1075,9 +1240,9 @@ def download_laporan():
                                 'object_position': 1
                             })
                         except Exception as img_err:
-                            ws.write(row_idx, 5, "Gbr Rusak", fmt_center)
+                            ws.write(row_idx, 7, "Gbr Rusak", fmt_center)
                 else:
-                    ws.write(row_idx, 5, "-", fmt_center)
+                    ws.write(row_idx, 7, "-", fmt_center)
 
                 # Jika tidak ada gambar, berikan tinggi baris standar yang nyaman dibaca
                 if not p.get("bukti_terima_path") or not os.path.exists(image_path):
@@ -1115,10 +1280,12 @@ def download_laporan():
             row_idx += 1
 
     output.seek(0)
+    cursor.close()
+    conn.close()
 
     return send_file(
         output,
-        download_name=f"Laporan_PKH_{tahun_sekarang}.xlsx",
+        download_name=f"Laporan_PKH_{tahun_laporan}.xlsx",
         as_attachment=True,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
@@ -1155,6 +1322,7 @@ def download_laporan_pdf():
     warna_header_abu = colors.HexColor('#7f8c8d')
     warna_zebra = colors.HexColor('#f2f2f2')
 
+    tahun = request.args.get('tahun')
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
@@ -1162,16 +1330,25 @@ def download_laporan_pdf():
     semua_warga = cursor.fetchall()
 
     cursor.execute("""
-        SELECT dp.warga_id, p.tahap, dp.tanggal_terima, dp.bukti_terima_path
+        SELECT
+            dp.warga_id,
+            p.tahun,
+            p.tahap,
+            dp.tanggal_terima,
+            dp.bukti_terima_path
         FROM data_penerima dp
-        LEFT JOIN periode p ON dp.periode_id = p.id
-        WHERE p.tahun = %s AND p.status = 'aktif'
-        ORDER BY p.tahap ASC, dp.tanggal_terima ASC
+        JOIN periode p
+            ON dp.periode_id = p.id
+        WHERE p.tahun = %s
+        ORDER BY p.tahap ASC
     """, (tahun,))
     penyaluran = cursor.fetchall()
     cursor.close()
     conn.close()
+    
+    tahun = request.args.get('tahun')
 
+    tahun_laporan = tahun if tahun else 'Tidak_Diketahui'
     # Proses data
     tahap_dict = {1: [], 2: [], 3: [], 4: []}
     warga_menerima = set()
@@ -1243,7 +1420,12 @@ def download_laporan_pdf():
     elements.append(HRFlowable(width="100%", thickness=0.8, lineCap='square', color=colors.black, spaceBefore=1.5, spaceAfter=8))
     
     style_title_doc = ParagraphStyle('TitleDoc', parent=styles['Title'], fontSize=12, spaceAfter=10, alignment=TA_CENTER, leading=14)
-    elements.append(Paragraph(f"<b>LAPORAN PENYALURAN PROGRAM KELUARGA HARAPAN (PKH)<br/>TAHUN ANGGARAN {tahun}</b>", style_title_doc))
+    elements.append(
+        Paragraph(
+            f"<b>LAPORAN PENYALURAN PROGRAM KELUARGA HARAPAN (PKH)<br/>TAHUN {tahun_laporan}</b>",
+            style_title_doc
+        )
+    )
     elements.append(Spacer(1, 5))
 
     # 2. DATA PER TAHAP
@@ -1361,7 +1543,7 @@ def download_laporan_pdf():
 
     return send_file(
         buffer,
-        download_name=f"Laporan_PKH_{tahun}.pdf",
+        download_name=f"Laporan_PKH_{tahun_laporan}.pdf",
         as_attachment=True,
         mimetype='application/pdf'
     )
