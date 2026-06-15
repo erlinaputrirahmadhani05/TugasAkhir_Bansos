@@ -5,9 +5,9 @@
     <h2>Masukkan Tahun Periode</h2>
   </div>
 
-  <form method="POST" action="{{ url_for('generate_periode') }}">
+  <form id="form-generate" method="POST" action="{{ url_for('generate_periode') }}">
     <div class="form-group">
-      <input type="number" name="tahun" min="2025" max="2100" placeholder="Masukkan Tahun" required />
+      <input type="number" id="input-tahun" name="tahun" min="2025" max="2100" placeholder="Masukkan Tahun" required />
     </div>
 
     <div class="form-action">
@@ -17,72 +17,179 @@
 </div>
 
 <div class="content-card mt-4">
-  <div class="card-header">
+  <div class="card-header d-flex justify-content-between align-items-center">
     <h2>Daftar Periode PKH</h2>
+
+    <button id="btn-hapus-massal" class="btn-action btn-danger" style="display: none; margin-bottom: 10px"><i class="fa fa-trash"></i> Hapus yang Dipilih (<span id="jumlah-terpilih">0</span>)</button>
   </div>
 
   <div class="table-responsive">
-    <table class="periode-table">
-      <thead>
-        <tr>
-          <th width="70">No</th>
-          <th>Tahun</th>
-          <th>Tahap</th>
-          <th>Status</th>
-          <th width="400">Aksi</th>
-        </tr>
-      </thead>
+    <form id="form-hapus-massal" method="POST" action="{{ url_for('hapus_periode_massal') }}">
+      <table class="periode-table">
+        <thead>
+          <tr>
+            <th width="40" class="text-center">
+              <input type="checkbox" id="select-all" />
+            </th>
+            <th width="70">No</th>
+            <th>Tahun</th>
+            <th>Tahap</th>
+            <th>Status</th>
+            <th width="400">Aksi</th>
+          </tr>
+        </thead>
 
-      <tbody>
-        {% for p in periode_list %}
-        <tr>
-          <td class="text-center">{{ loop.index }}</td>
+        <tbody>
+          {% for p in periode_list %}
+          <tr>
+            <td class="text-center">
+              <input type="checkbox" name="ids_periode" value="{{ p.id }}" class="cb-periode" />
+            </td>
 
-          <td>
-            <strong>{{ p.tahun }}</strong>
-          </td>
+            <td class="text-center">{{ loop.index }}</td>
 
-          <td>Tahap {{ p.tahap }}</td>
+            <td>
+              <strong>{{ p.tahun }}</strong>
+            </td>
 
-          <td>
-            {% if p.status == 'aktif' %}
-            <span class="status-badge status-active"> Aktif </span>
-            {% else %}
-            <span class="status-badge status-inactive"> Nonaktif </span>
-            {% endif %}
-          </td>
+            <td>Tahap {{ p.tahap }}</td>
 
-          <td>
-            <div class="action-group">
+            <td>
               {% if p.status == 'aktif' %}
-              <a href="{{ url_for('ubah_status_periode', id=p.id) }}" class="btn-action btn-danger"> Nonaktifkan </a>
+              <span class="status-badge status-active"> Aktif </span>
               {% else %}
-              <a href="{{ url_for('ubah_status_periode', id=p.id) }}" class="btn-action btn-success"> Aktifkan </a>
+              <span class="status-badge status-inactive"> Nonaktif </span>
               {% endif %}
+            </td>
 
-              <a href="{{ url_for('edit_periode', id=p.id) }}" class="btn-action btn-warning"> Edit </a>
+            <td>
+              <div class="action-group">
+                {% if p.status == 'aktif' %}
+                <a href="{{ url_for('ubah_status_periode', id=p.id) }}" class="btn-action btn-danger"> Nonaktifkan </a>
+                {% else %}
+                <a href="{{ url_for('ubah_status_periode', id=p.id) }}" class="btn-action btn-success"> Aktifkan </a>
+                {% endif %}
 
-              <a href="{{ url_for('hapus_periode', id=p.id) }}" class="btn-action btn-delete btn-hapus"> Hapus </a>
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+                <a href="{{ url_for('edit_periode', id=p.id) }}" class="btn-action btn-warning"> Edit </a>
+
+                <a href="{{ url_for('hapus_periode', id=p.id) }}" class="btn-action btn-delete btn-hapus"> Hapus </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
   </div>
 </div>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+
+    // === 1. MENANGKAP ALERT DARI BACKEND ===
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          {% if category == 'swal-success' %}
+            Swal.fire({ title: "Berhasil!", text: "{{ message }}", icon: "success", confirmButtonColor: "#10b981", timer: 1500 });
+          {% elif category == 'danger' %}
+            Swal.fire({ title: "Gagal!", text: "{{ message }}", icon: "error", confirmButtonColor: "#dc2626" });
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    // === 2. VALIDASI PRE-GENERATE (ALERT KETIKA MENCAPAI BATAS) ===
+    const formGenerate = document.getElementById('form-generate');
+    const inputTahun = document.getElementById('input-tahun');
+
+    formGenerate.addEventListener('submit', function (e) {
+      const tahunInputan = inputTahun.value.trim();
+
+      // Ambil semua baris data dari tabel periode di bawah
+      const rows = document.querySelectorAll('.periode-table tbody tr');
+      let jumlahTahap = 0;
+
+      // Hitung berapa kali tahun tersebut sudah muncul di tabel
+      rows.forEach(row => {
+        const kolomTahun = row.querySelector('td:nth-child(3)'); // Kolom Tahun (setelah No & Checkbox)
+        if (kolomTahun && kolomTahun.textContent.trim() === tahunInputan) {
+          jumlahTahap++;
+        }
+      });
+
+      // Jika di tabel sudah ada 4 baris dengan tahun yang sama, kunci form & munculkan Swal
+      if (jumlahTahap >= 4) {
+        e.preventDefault(); // Menghentikan form agar tidak tersubmit ke backend
+
+        Swal.fire({
+          title: "Batas Tercapai!",
+          text: `Periode di tahun ${tahunInputan} sudah mencapai batas maksimal (Tahap 4)!`,
+          icon: "warning",
+          confirmButtonColor: "#dc2626"
+        });
+      }
+    });
+
+    // === 3. LOGIC CHECKBOX & TOMBOL HAPUS MASSAL ===
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.cb-periode');
+    const btnHapusMassal = document.getElementById('btn-hapus-massal');
+    const jumlahTerpilih = document.getElementById('jumlah-terpilih');
+    const formHapusMassal = document.getElementById('form-hapus-massal');
+
+    function toggleTombolHapus() {
+        const checkedCount = document.querySelectorAll('.cb-periode:checked').length;
+        if (checkedCount > 0) {
+            btnHapusMassal.style.display = 'inline-block';
+            jumlahTerpilih.textContent = checkedCount;
+        } else {
+            btnHapusMassal.style.display = 'none';
+        }
+    }
+
+    if(selectAll) {
+      selectAll.addEventListener('change', function() {
+          checkboxes.forEach(cb => cb.checked = this.checked);
+          toggleTombolHapus();
+      });
+    }
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            if (!this.checked) selectAll.checked = false;
+            if (document.querySelectorAll('.cb-periode:checked').length === checkboxes.length) selectAll.checked = true;
+            toggleTombolHapus();
+        });
+    });
+
+    if(btnHapusMassal) {
+      btnHapusMassal.addEventListener('click', function(e) {
+          e.preventDefault();
+          Swal.fire({
+            title: "Hapus Data Terpilih?",
+            text: "Semua data periode yang dicentang beserta data penerima di dalamnya akan dihapus permanen!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#dc2626",
+            cancelButtonColor: "#6b7280",
+            confirmButtonText: "Ya, Hapus Semua",
+            cancelButtonText: "Batal",
+          }).then((result) => {
+            if (result.isConfirmed) formHapusMassal.submit();
+          });
+      });
+    }
+
+    // === 4. KONFIRMASI TOMBOL HAPUS SATUAN ===
     document.querySelectorAll(".btn-hapus").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.preventDefault();
-
-        const url = this.getAttribute("href");
+        const targetUrl = this.href || this.getAttribute("href");
 
         Swal.fire({
           title: "Hapus Periode?",
-          text: "Data periode yang dihapus tidak dapat dikembalikan.",
+          text: "Data periode ini akan dihapus permanen.",
           icon: "warning",
           showCancelButton: true,
           confirmButtonColor: "#dc2626",
@@ -90,17 +197,7 @@
           confirmButtonText: "Ya, Hapus",
           cancelButtonText: "Batal",
         }).then((result) => {
-          if (result.isConfirmed) {
-            Swal.fire({
-              title: "Berhasil!",
-              text: "Periode berhasil dihapus.",
-              icon: "success",
-              timer: 1200,
-              showConfirmButton: false,
-            }).then(() => {
-              window.location.href = url;
-            });
-          }
+          if (result.isConfirmed) window.location.href = targetUrl;
         });
       });
     });

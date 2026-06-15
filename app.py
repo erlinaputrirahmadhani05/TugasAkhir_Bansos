@@ -871,30 +871,47 @@ def generate_periode():
         return redirect(url_for('dashboard'))
 
     tahun = request.form.get('tahun')
+    if not tahun:
+        flash("Tahun harus diisi", "danger")
+        return redirect(url_for('form_generate_periode'))
 
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
 
     try:
-        for tahap in range(1, 5):
+        # 1. Cari tahap tertinggi yang sudah terdaftar pada tahun tersebut
+        cursor.execute("""
+            SELECT MAX(tahap) as tahap_terakhir 
+            FROM periode 
+            WHERE tahun = %s
+        """, (tahun,))
+        
+        result = cursor.fetchone()
+        
+        # 2. Konversi nilai ke integer dengan aman
+        tahap_terakhir = 0
+        if result and result['tahap_terakhir'] is not None:
+            # Menggunakan int() untuk memastikan nilainya berupa angka, bukan string
+            tahap_terakhir = int(result['tahap_terakhir'])
 
-            cursor.execute("""
-                SELECT id
-                FROM periode
-                WHERE tahun=%s AND tahap=%s
-            """, (tahun, tahap))
+        # 3. Validasi jika sudah mencapai batas maksimal (Tahap 4)
+        if tahap_terakhir >= 4:
+            flash(f"Periode di tahun {tahun} sudah mencapai batas!", "swal-warning")
+            cursor.close()
+            conn.close()
+            return redirect(url_for('form_generate_periode'))
 
-            if cursor.fetchone():
-                continue
+        # 4. Tentukan tahap baru berikutnya
+        tahap_baru = tahap_terakhir + 1
 
-            cursor.execute("""
-                INSERT INTO periode
-                (tahun, tahap, status, created_at)
-                VALUES (%s, %s, 'nonaktif', NOW())
-            """, (tahun, tahap))
+        # 5. Insert data tahap baru tersebut
+        cursor.execute("""
+            INSERT INTO periode (tahun, tahap, status, created_at)
+            VALUES (%s, %s, 'nonaktif', NOW())
+        """, (tahun, tahap_baru))
 
         conn.commit()
-        flash(f"Periode tahun {tahun} berhasil dibuat!", "success")
+        flash(f"Periode tahun {tahun} Tahap {tahap_baru} berhasil dibuat!", "swal-success")
 
     except Exception as e:
         conn.rollback()
@@ -1040,21 +1057,61 @@ def hapus_periode(id):
     cursor = conn.cursor()
 
     try:
-
+        # Gunakan int(id) untuk memastikan keamanan tipe data pada query MySQL
         cursor.execute("""
             DELETE FROM periode
-            WHERE id=%s
-        """, (id,))
+            WHERE id = %s
+        """, (int(id),))
 
         conn.commit()
-
-        flash("Periode berhasil dihapus", "success")
+        # Menggunakan 'swal-success' agar ditangkap oleh JavaScript pembaca Flash Message
+        flash("Periode berhasil dihapus dari database.", "swal-success")
 
     except Exception as e:
-
         conn.rollback()
+        # Jika gagal (misal karena constraint foreign key), beritahu error aslinya
+        flash(f"Database menolak penghapusan: {e}", "danger")
 
-        flash(f"Gagal menghapus periode: {e}", "danger")
+    cursor.close()
+    conn.close()
+
+    return redirect(url_for('form_generate_periode'))
+
+@app.route('/periode/hapus-massal', methods=['POST'])
+@require_login
+def hapus_periode_massal():
+    if session.get('role', '').lower() != 'superadmin':
+        flash("Hanya superadmin yang dapat menghapus periode", "danger")
+        return redirect(url_for('dashboard'))
+
+    # Mengambil list ID yang dicentang dari form ([ '1', '2', '3' ])
+    ids_terpilih = request.form.getlist('ids_periode')
+
+    if not ids_terpilih:
+        flash("Tidak ada periode yang dipilih untuk dihapus.", "danger")
+        return redirect(url_for('form_generate_periode'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Karena menggunakan ON DELETE CASCADE di database (Opsi 2 kemarin),
+        # Kita cukup menghapus data di tabel 'periode'. Tabel anak otomatis ikut terhapus.
+        
+        # Menyusun placeholders (%s, %s, %s, dst) sesuai dengan jumlah ID yang masuk
+        format_strings = ','.join(['%s'] * len(ids_terpilih))
+        
+        query = f"DELETE FROM periode WHERE id IN ({format_strings})"
+        
+        # Eksekusi query dengan mengirimkan list ID sebagai tuple/list parameter
+        cursor.execute(query, tuple(ids_terpilih))
+        conn.commit()
+
+        flash(f"Berhasil menghapus {len(ids_terpilih)} periode yang terpilih.", "swal-success")
+
+    except Exception as e:
+        conn.rollback()
+        flash(f"Gagal melakukan hapus massal: {e}", "danger")
 
     cursor.close()
     conn.close()
