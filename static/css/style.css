@@ -1,4 +1,3 @@
-/* Login Page Styles */
 * {
     margin: 0;
     padding: 0;
@@ -165,7 +164,6 @@
     transform: translateY(0);
 }
 
-/* ========== Responsive - Login ========== */
 @media (max-width: 480px) {
     body {
         padding: 12px;
@@ -213,7 +211,6 @@
     min-height: 100vh;
 }
 
-/* ===== data penerima ===== */
 .page-title {
   margin-bottom: 15px;
   font-weight: 600;
@@ -224,7 +221,6 @@
   overflow-x: auto;
 }
 
-/* ===== Tombol Download ===== */
 .dashboard-page .btn-download {
     display: inline-flex;
     align-items: center;
@@ -251,7 +247,6 @@
   opacity: 0.9;
 }
 
-/* ===== Tampilan Tabel ===== */
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -340,7 +335,6 @@
   color: #721c24;
 }
 
-/* ===== Search Input ===== */
 .search-input {
   height: 42px;
   padding: 0 14px;
@@ -362,7 +356,6 @@
   color: #888;
 }
 
-/* ===== Action Buttons ===== */
 .action-buttons form {
     display: inline-block;
     margin: 0;
@@ -425,7 +418,6 @@
     height: 18px;
 }
 
-/* ===== Modal ===== */
 .modal {
   display: none;
   position: fixed;
@@ -500,7 +492,6 @@
   to   { transform: scale(1);   opacity: 1; }
 }
 
-/* ================= FILTER BAR ================= */
 .filter-bar {
   display: flex;
   align-items: center;
@@ -509,14 +500,12 @@
   margin-bottom: 20px;
 }
 
-/* KIRI — download button (superadmin) atau search (admin/petugas) */
 .filter-left {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
 }
 
-/* KANAN — search + tahap + tahun + tombol filter, semua sejajar */
 .filter-right {
   flex: 0 0 auto;
   display: flex;
@@ -525,7 +514,6 @@
   margin-left: auto;
 }
 
-/* Semua elemen di filter-bar tingginya seragam 42px */
 .filter-bar .search-input,
 .filter-bar select,
 #btnFilter {
@@ -550,7 +538,6 @@
   white-space: nowrap;
 }
 
-/* ================= MOBILE ================= */
 @media (max-width: 768px) {
   .filter-bar {
     flex-direction: column;
@@ -594,7 +581,6 @@
   }
 }
 
-/* ===== Lihat Bukti ===== */
 .btn-lihat-bukti {
   background-color: #53556d;
   color: white;

@@ -85,11 +85,9 @@
   });
 
   document.addEventListener("DOMContentLoaded", function () {
-    // ================= SEARCH =================
     const searchInput = document.getElementById("searchUser");
     const tbody = document.querySelector("#userTable tbody");
 
-    // buat row pesan tidak ditemukan
     const emptyRow = document.createElement("tr");
     emptyRow.id = "emptyMessage";
     emptyRow.style.display = "none";
@@ -124,7 +122,6 @@
           }
         });
 
-        // tampilkan pesan jika tidak ada data cocok
         if (visibleCount === 0) {
           emptyRow.style.display = "";
         } else {

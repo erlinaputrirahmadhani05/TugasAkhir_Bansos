@@ -25,7 +25,7 @@ import pandas as pd
 from flask import send_file
 from datetime import datetime
 
-# Import laporan PDF
+# import laporan PDF
 import io
 import os
 from datetime import datetime
@@ -37,7 +37,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, HRFlowable
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 
-# Import utilities
+# import utilities
 from lib.password_utils import verify_password
 
 
@@ -164,7 +164,6 @@ def dashboard():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # ==== DATA PER KUARTAL (semua role) ====
         cursor.execute("""
             SELECT 
                 QUARTER(tanggal_terima) as kuartal,
@@ -182,14 +181,14 @@ def dashboard():
             if 1 <= kuartal <= 4:
                 penerima_per_kuartal[kuartal - 1] = jumlah
 
-        # ==== TOTAL WARGA ====
+        # TOTAL WARGA
         cursor.execute("SELECT COUNT(*) FROM warga_penerima WHERE status='aktif'")
         jumlah_warga_aktif = cursor.fetchone()[0]
 
         cursor.execute("SELECT COUNT(*) FROM warga_penerima WHERE status='tidak_aktif'")
         jumlah_warga_nonaktif = cursor.fetchone()[0]
 
-        # ==== TOTAL PENERIMA BANTUAN ====
+        # TOTAL PENERIMA BANTUAN
         if role == 'petugas lapangan':
             user_id = session.get('user_id')
             if user_id:
@@ -234,11 +233,11 @@ def dashboard():
             cursor.execute("SELECT COUNT(*) FROM data_penerima")
             jumlah_penyaluran = cursor.fetchone()[0]
 
-        # ==== TOTAL AKUN AKTIF ====
+        # TOTAL AKUN AKTIF
         cursor.execute("SELECT COUNT(*) FROM users WHERE status_akun = 'Aktif'")
         jumlah_akun_aktif = cursor.fetchone()[0]
 
-        # ==== PERSENTASE PENYALURAN (admin & superadmin) ====
+        # PERSENTASE PENYALURAN (admin & superadmin) 
         total_warga_aktif = jumlah_warga_aktif or 1
         cursor.execute("""
             SELECT COUNT(DISTINCT warga_id) 
@@ -250,7 +249,7 @@ def dashboard():
             (jumlah_warga_yang_mendapat_bantuan / total_warga_aktif) * 100, 1
         )
 
-        # ===== DATA PENERIMA TERBARU ====
+        # DATA PENERIMA TERBARU
         cursor.execute("""
             SELECT 
                 w.nama_encrypted,
@@ -275,7 +274,7 @@ def dashboard():
                 "created_at": row[3]
             })
 
-        # ===== STATUS WARGA ====
+        # STATUS WARGA
         cursor.execute("""
             SELECT status, COUNT(*) as jumlah 
             FROM warga_penerima 
@@ -879,7 +878,6 @@ def generate_periode():
     cursor = conn.cursor(dictionary=True)
 
     try:
-        # 1. Cari tahap tertinggi yang sudah terdaftar pada tahun tersebut
         cursor.execute("""
             SELECT MAX(tahap) as tahap_terakhir 
             FROM periode 
@@ -888,23 +886,18 @@ def generate_periode():
         
         result = cursor.fetchone()
         
-        # 2. Konversi nilai ke integer dengan aman
         tahap_terakhir = 0
         if result and result['tahap_terakhir'] is not None:
-            # Menggunakan int() untuk memastikan nilainya berupa angka, bukan string
             tahap_terakhir = int(result['tahap_terakhir'])
 
-        # 3. Validasi jika sudah mencapai batas maksimal (Tahap 4)
         if tahap_terakhir >= 4:
             flash(f"Periode di tahun {tahun} sudah mencapai batas!", "swal-warning")
             cursor.close()
             conn.close()
             return redirect(url_for('form_generate_periode'))
 
-        # 4. Tentukan tahap baru berikutnya
         tahap_baru = tahap_terakhir + 1
 
-        # 5. Insert data tahap baru tersebut
         cursor.execute("""
             INSERT INTO periode (tahun, tahap, status, created_at)
             VALUES (%s, %s, 'nonaktif', NOW())
@@ -1057,19 +1050,16 @@ def hapus_periode(id):
     cursor = conn.cursor()
 
     try:
-        # Gunakan int(id) untuk memastikan keamanan tipe data pada query MySQL
         cursor.execute("""
             DELETE FROM periode
             WHERE id = %s
         """, (int(id),))
 
         conn.commit()
-        # Menggunakan 'swal-success' agar ditangkap oleh JavaScript pembaca Flash Message
         flash("Periode berhasil dihapus dari database.", "swal-success")
 
     except Exception as e:
         conn.rollback()
-        # Jika gagal (misal karena constraint foreign key), beritahu error aslinya
         flash(f"Database menolak penghapusan: {e}", "danger")
 
     cursor.close()
@@ -1084,7 +1074,6 @@ def hapus_periode_massal():
         flash("Hanya superadmin yang dapat menghapus periode", "danger")
         return redirect(url_for('dashboard'))
 
-    # Mengambil list ID yang dicentang dari form ([ '1', '2', '3' ])
     ids_terpilih = request.form.getlist('ids_periode')
 
     if not ids_terpilih:
@@ -1095,15 +1084,10 @@ def hapus_periode_massal():
     cursor = conn.cursor()
 
     try:
-        # Karena menggunakan ON DELETE CASCADE di database (Opsi 2 kemarin),
-        # Kita cukup menghapus data di tabel 'periode'. Tabel anak otomatis ikut terhapus.
-        
-        # Menyusun placeholders (%s, %s, %s, dst) sesuai dengan jumlah ID yang masuk
         format_strings = ','.join(['%s'] * len(ids_terpilih))
         
         query = f"DELETE FROM periode WHERE id IN ({format_strings})"
         
-        # Eksekusi query dengan mengirimkan list ID sebagai tuple/list parameter
         cursor.execute(query, tuple(ids_terpilih))
         conn.commit()
 
@@ -1123,13 +1107,12 @@ def hapus_periode_massal():
 def get_bukti(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-
 import io
 import os
 import pandas as pd
 from datetime import datetime
 from flask import send_file
-from reportlab.lib import colors # Jika masih dibutuhkan untuk modul lain
+from reportlab.lib import colors 
 
 @app.route('/download_laporan')
 @require_login
@@ -1190,25 +1173,22 @@ def download_laporan():
                 "RT": decrypt_data(w.get("rt_encrypted"))
             })
 
-    # ====================== EXPORT EXCEL ======================
+    # EXPORT EXCEL
     output = io.BytesIO()
 
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         workbook = writer.book
 
-        # Palette Warna Profesional (Navy & Grey Modern)
         warna_header = "#2078AF"
         warna_zebra = '#F9F9F9'
         warna_border = '#D3D3D3'
 
-        # Definisikan Format Tampilan Sel
         header_format = workbook.add_format({
             'bold': True, 'align': 'center', 'valign': 'vcenter',
             'bg_color': warna_header, 'font_color': 'white', 
             'border': 1, 'border_color': warna_border, 'font_name': 'Arial', 'font_size': 10
         })
         
-        # Format Data Rata Tengah
         cell_center = workbook.add_format({
             'align': 'center', 'valign': 'vcenter', 
             'border': 1, 'border_color': warna_border, 'font_name': 'Arial', 'font_size': 10
@@ -1218,7 +1198,6 @@ def download_laporan():
             'border': 1, 'border_color': warna_border, 'font_name': 'Arial', 'font_size': 10
         })
 
-        # Format Data Rata Kiri (Khusus Nama agar rapi)
         cell_left = workbook.add_format({
             'align': 'left', 'valign': 'vcenter', 
             'border': 1, 'border_color': warna_border, 'font_name': 'Arial', 'font_size': 10
@@ -1228,47 +1207,39 @@ def download_laporan():
             'border': 1, 'border_color': warna_border, 'font_name': 'Arial', 'font_size': 10
         })
 
-        # 1. CETAK HALAMAN PER TAHAP (1 - 4)
         for tahap in [1, 2, 3, 4]:
             sheet_name = f"Tahap {tahap}"
             ws = workbook.add_worksheet(sheet_name)
             writer.sheets[sheet_name] = ws
 
-            # Pengaturan Lebar Kolom yang Ideal
             ws.set_column(0, 0, 6)
-            ws.set_column(1, 1, 12)   # Tahun
-            ws.set_column(2, 2, 10)   # Tahap
-            ws.set_column(3, 3, 30)   # Nama
-            ws.set_column(4, 4, 22)   # NIK
-            ws.set_column(5, 5, 10)   # RT
-            ws.set_column(6, 6, 20)   # Tanggal
-            ws.set_column(7, 7, 40)   # Bukti
+            ws.set_column(1, 1, 12)  
+            ws.set_column(2, 2, 10)  
+            ws.set_column(3, 3, 30)  
+            ws.set_column(4, 4, 22)   
+            ws.set_column(5, 5, 10)   
+            ws.set_column(6, 6, 20)   
+            ws.set_column(7, 7, 40)   
 
-            # Menulis Header Tabel
             headers = ["No", "Tahun","Tahap","Nama Lengkap", "NIK", "RT", "Tanggal Terima", "Bukti Terima"]
             for col, header in enumerate(headers):
                 ws.write(0, col, header, header_format)
 
-            ws.set_row(0, 28) # Tinggi Baris Header
-            ws.freeze_panes(1, 0) # Kunci baris header agar tidak ikut tergulung
-
+            ws.set_row(0, 28) 
+            ws.freeze_panes(1, 0) 
             row_idx = 1
             for idx, p in enumerate(tahap_dict.get(tahap, []), 1):
                 warga = next((w for w in semua_warga if w['id'] == p['warga_id']), None)
                 if not warga:
                     continue
-
-                # Pilih format zebra striping berdasarkan baris ganjil/genap
                 fmt_left = cell_left_zebra if row_idx % 2 == 0 else cell_left
                 fmt_center = cell_center_zebra if row_idx % 2 == 0 else cell_center
 
-                # Ambil dan Dekripsi Data
                 nama_warga = decrypt_data(warga.get("nama_encrypted", ""))
                 nik_warga = decrypt_data(warga.get("nik_encrypted", ""))
                 rt_warga = decrypt_data(warga.get("rt_encrypted", ""))
                 tgl_terima = str(p.get("tanggal_terima") or "-")
 
-                # Tulis data ke dalam sel excel
                 ws.write(row_idx, 0, idx, fmt_center)
                 ws.write(row_idx, 1, p['tahun'], fmt_center)
                 ws.write(row_idx, 2, p['tahap'], fmt_center)
@@ -1278,7 +1249,6 @@ def download_laporan():
                 ws.write(row_idx, 6, tgl_terima, fmt_center)
                 ws.write_blank(row_idx, 7, None, fmt_center)
 
-                # Proses penyisipan gambar bukti fisik
                 image_path = None
                 if p.get("bukti_terima_path"):
                     image_path = os.path.join(
@@ -1287,7 +1257,6 @@ def download_laporan():
                     )
                     if os.path.exists(image_path):
                         try:
-                            # Mengatur tinggi baris agar gambar termuat dengan proporsional
                             ws.set_row(row_idx, 110)
                             ws.insert_image(row_idx, 7, image_path, {
                                 'x_scale': 0.65,
@@ -1301,21 +1270,18 @@ def download_laporan():
                 else:
                     ws.write(row_idx, 7, "-", fmt_center)
 
-                # Jika tidak ada gambar, berikan tinggi baris standar yang nyaman dibaca
                 if not p.get("bukti_terima_path") or not os.path.exists(image_path):
                     ws.set_row(row_idx, 22)
 
                 row_idx += 1
 
-        # 2. CETAK HALAMAN WARGA TIDAK MENERIMA
         ws_tidak = workbook.add_worksheet("Tidak Menerima")
         writer.sheets["Tidak Menerima"] = ws_tidak
 
-        # Pengaturan Lebar Kolom
-        ws_tidak.set_column(0, 0, 6)   # No
-        ws_tidak.set_column(1, 1, 32)  # Nama Lengkap
-        ws_tidak.set_column(2, 2, 24)  # NIK
-        ws_tidak.set_column(3, 3, 12)  # RT
+        ws_tidak.set_column(0, 0, 6)   
+        ws_tidak.set_column(1, 1, 32)  
+        ws_tidak.set_column(2, 2, 24)  
+        ws_tidak.set_column(3, 3, 12)  
 
         headers_tidak = ["No", "Nama Lengkap", "NIK", "RT"]
         for col, header in enumerate(headers_tidak):
@@ -1364,7 +1330,6 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 def download_laporan_pdf():
     tahun = datetime.now().year
     
-    # Format Tanggal & Waktu Bahasa Indonesia
     bulan_id = {
         1: "Januari", 2: "Februari", 3: "Maret", 4: "April", 5: "Mei", 6: "Juni",
         7: "Juli", 8: "Agustus", 9: "September", 10: "Oktober", 11: "November", 12: "Desember"
@@ -1374,7 +1339,6 @@ def download_laporan_pdf():
     current_time_id = f"{now.day} {nama_bulan} {now.year}, {now.strftime('%H:%M')}"
     tanggal_ttd = f"{now.day} {nama_bulan} {now.year}"
 
-    # Definisi Warna Profesional
     warna_header_biru = colors.HexColor('#1a5276')
     warna_header_abu = colors.HexColor('#7f8c8d')
     warna_zebra = colors.HexColor('#f2f2f2')
@@ -1406,7 +1370,6 @@ def download_laporan_pdf():
     tahun = request.args.get('tahun')
 
     tahun_laporan = tahun if tahun else 'Tidak_Diketahui'
-    # Proses data
     tahap_dict = {1: [], 2: [], 3: [], 4: []}
     warga_menerima = set()
 
@@ -1433,7 +1396,7 @@ def download_laporan_pdf():
                 "rt": decrypt_data(w.get("rt_encrypted", ""))
             })
 
-    # ====================== BUAT PDF ======================
+    # pdf
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, 
                             rightMargin=1.2*cm, leftMargin=1.2*cm, 
@@ -1441,19 +1404,15 @@ def download_laporan_pdf():
     elements = []
     styles = getSampleStyleSheet()
 
-    # Custom Styles
     style_kop = ParagraphStyle('KopSurat', parent=styles['Normal'], alignment=TA_CENTER, leading=14)
     style_tahap = ParagraphStyle('Tahap', parent=styles['Heading2'], fontSize=11, color=warna_header_biru, spaceBefore=14, spaceAfter=6)
     
-    # Style Sel Tabel
     style_cell = ParagraphStyle('Cell', parent=styles['Normal'], fontSize=9, leading=12)
     style_cell_center = ParagraphStyle('CellCenter', parent=style_cell, alignment=TA_CENTER)
     
-    # Memastikan text header "No" dan lainnya tidak turun berantakan
     style_th = ParagraphStyle('TableHeader', parent=styles['Normal'], fontSize=9, fontName='Helvetica-Bold', textColor=colors.whitesmoke, alignment=TA_CENTER, leading=10)
     style_meta_ttd = ParagraphStyle('MetaTTD', parent=styles['Normal'], fontSize=8, textColor=colors.grey, alignment=TA_CENTER)
 
-    # 1. HEADER / KOP SURAT
     logo_path = os.path.join(app.static_folder, 'images', 'logo_kab.png')
     logo = Image(logo_path, width=2.0*cm, height=2.0*cm) if os.path.exists(logo_path) else Paragraph("LOGO", styles['Normal'])
 
@@ -1485,7 +1444,6 @@ def download_laporan_pdf():
     )
     elements.append(Spacer(1, 5))
 
-    # 2. DATA PER TAHAP
     for tahap in [1, 2, 3, 4]:
         elements.append(Paragraph(f"PENYALURAN TAHAP {tahap}", style_tahap))
         
@@ -1505,7 +1463,6 @@ def download_laporan_pdf():
                     image_path = os.path.join(app.config['UPLOAD_FOLDER'], row["bukti_terima_path"])
                     if os.path.exists(image_path):
                         try:
-                            # Mengubah ukuran gambar bukti agar proporsional dan penuh di dalam kolomnya (Lebar kolom 2.8cm)
                             bukti_img = Image(image_path, width=2.5*cm, height=1.6*cm)
                         except:
                             bukti_img = Paragraph("Gbr Rusak", style_cell_center)
@@ -1519,16 +1476,12 @@ def download_laporan_pdf():
                     bukti_img
                 ])
             
-            # PENYESUAIAN LEBAR KOLOM:
-            # - Kolom No dinaikkan dari 0.8cm ke 1.1cm agar teks "No" aman rata tengah horizontal
-            # - Kolom Bukti disesuaikan menjadi 2.8cm agar gambar penuh tanpa meluber
             t = Table(data, colWidths=[1.1*cm, 5.8*cm, 3.8*cm, 1.3*cm, 3.8*cm, 2.8*cm])
             t.setStyle(TableStyle([
                 ('BACKGROUND', (0,0), (-1,0), warna_header_biru),
                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
                 ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
                 ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
-                # Padding vertikal disesuaikan agar ruang gambar bersih dan rapi
                 ('TOPPADDING', (0,0), (-1,-1), 5),
                 ('BOTTOMPADDING', (0,0), (-1,-1), 5),
                 ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, warna_zebra])
@@ -1539,7 +1492,6 @@ def download_laporan_pdf():
         
         elements.append(Spacer(1, 5))
 
-    # 3. WARGA TIDAK MENERIMA
     elements.append(Spacer(1, 5))
     elements.append(Paragraph("DATA WARGA TIDAK MENERIMA BANTUAN", style_tahap))
     
@@ -1558,7 +1510,6 @@ def download_laporan_pdf():
                 Paragraph(row["rt"], style_cell_center)
             ])
         
-        # Lebar kolom disamakan skalanya dengan tabel di atas (Total 18.6 cm)
         t_tm = Table(data_tm, colWidths=[1.1*cm, 8.2*cm, 5.3*cm, 4*cm])
         t_tm.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), warna_header_abu),
@@ -1573,7 +1524,6 @@ def download_laporan_pdf():
     else:
         elements.append(Paragraph("Semua warga telah menerima bantuan.", styles["Normal"]))
 
-    # 4. TANDA TANGAN & INFO DICETAK PADA
     elements.append(Spacer(1, 20))
     ttd_data = [
         ["", Paragraph(f"Dicetak pada: {current_time_id}", style_meta_ttd)],

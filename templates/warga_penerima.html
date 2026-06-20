@@ -213,7 +213,6 @@ if (searchInput) {
 
     document.querySelectorAll("#wargaTable tbody tr").forEach((row) => {
 
-      // skip row kosong bawaan jinja
       if (row.cells.length < 9) return;
 
       const nik  = row.cells[1]?.innerText.toLowerCase() || "";

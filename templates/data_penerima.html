@@ -12,7 +12,6 @@
   <div class="filter-bar">
     <div class="filter-left">
       {% if session.role|lower == 'superadmin' %}
-      <!-- Button Excel -->
       <form method="GET" action="{{ url_for('download_laporan') }}">
         <select name="tahun" required>
             <option value="" selected hidden>-- Pilih Tahun --</option>
@@ -77,7 +76,6 @@
   </div>
 
   {% else %}
-  <!-- PETUGAS LAPANGAN -->
   <div class="filter-bar">
     <div class="filter-left">
       <input type="text" class="search-penerima search-input" placeholder="Cari Data Penerima..." />
@@ -257,7 +255,6 @@ searchInputs.forEach(input => {
 
     document.querySelectorAll("#penerimaTable tbody tr").forEach((row) => {
 
-      // skip row pesan
       if (row.id === "notFoundRow") return;
 
       if (row.cells.length < 8) return;

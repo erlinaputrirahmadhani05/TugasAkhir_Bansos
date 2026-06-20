@@ -12,7 +12,6 @@
   <body class="dashboard-page">
     <div class="dashboard-container">
 
-      <!-- Tombol Hamburger -->
       <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Buka menu">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -23,7 +22,6 @@
 
       <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
-      <!-- Sidebar -->
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <img src="{{ url_for('static', filename='images/logo_kab.png') }}" alt="Logo Kabupaten" class="sidebar-logo" />
@@ -129,7 +127,6 @@
         </div>
       </aside>
 
-      <!-- Main Content -->
       <main class="main-content">
         <header class="content-header">
           <div class="header-left">
@@ -159,7 +156,6 @@
               <p>Desa Ngengor</p>
             </div>
 
-            <!-- ================= STATISTIK DASHBOARD ================= -->
 
             {% if session.get('role', '').lower() == 'petugas lapangan' %}
             <div class="admin-stats-row">
@@ -380,7 +376,6 @@
       });
     </script>
     {% endif %}
-    <!-- Script Sidebar Toggle -->
     <script>
       (function () {
         var sidebar = document.getElementById("sidebar");
@@ -409,8 +404,22 @@
       })();
     </script>
 
-    <!-- Script Konfirmasi Logout -->
     <script>
+      document.addEventListener('DOMContentLoaded', function () {
+          const alerts = document.querySelectorAll('.alert');
+
+          alerts.forEach(function(alert) {
+              setTimeout(function() {
+                  alert.style.transition = 'opacity 0.5s ease';
+                  alert.style.opacity = '0';
+
+                  setTimeout(function() {
+                      alert.remove();
+                  }, 500);
+              }, 3000);
+          });
+      });
+
       document.addEventListener("DOMContentLoaded", function () {
         const logoutLink = document.getElementById("logout-link");
         if (logoutLink) {
@@ -434,6 +443,24 @@
         }
       });
     </script>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+          const alerts = document.querySelectorAll('.alert');
+
+          alerts.forEach(function(alert) {
+              setTimeout(function() {
+                  alert.style.transition = 'all 0.5s ease';
+                  alert.style.opacity = '0';
+                  alert.style.transform = 'translateY(-10px)';
+
+                  setTimeout(function() {
+                      alert.remove();
+                  }, 500);
+              }, 3000);
+          });
+      });
+      </script>
 
   </body>
 </html>

@@ -86,7 +86,6 @@
 <script>
   document.addEventListener("DOMContentLoaded", function () {
 
-    // === 1. MENANGKAP ALERT DARI BACKEND ===
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
@@ -99,28 +98,24 @@
       {% endif %}
     {% endwith %}
 
-    // === 2. VALIDASI PRE-GENERATE (ALERT KETIKA MENCAPAI BATAS) ===
     const formGenerate = document.getElementById('form-generate');
     const inputTahun = document.getElementById('input-tahun');
 
     formGenerate.addEventListener('submit', function (e) {
       const tahunInputan = inputTahun.value.trim();
 
-      // Ambil semua baris data dari tabel periode di bawah
       const rows = document.querySelectorAll('.periode-table tbody tr');
       let jumlahTahap = 0;
 
-      // Hitung berapa kali tahun tersebut sudah muncul di tabel
       rows.forEach(row => {
-        const kolomTahun = row.querySelector('td:nth-child(3)'); // Kolom Tahun (setelah No & Checkbox)
+        const kolomTahun = row.querySelector('td:nth-child(3)'); 
         if (kolomTahun && kolomTahun.textContent.trim() === tahunInputan) {
           jumlahTahap++;
         }
       });
 
-      // Jika di tabel sudah ada 4 baris dengan tahun yang sama, kunci form & munculkan Swal
       if (jumlahTahap >= 4) {
-        e.preventDefault(); // Menghentikan form agar tidak tersubmit ke backend
+        e.preventDefault(); 
 
         Swal.fire({
           title: "Batas Tercapai!",
@@ -131,7 +126,6 @@
       }
     });
 
-    // === 3. LOGIC CHECKBOX & TOMBOL HAPUS MASSAL ===
     const selectAll = document.getElementById('select-all');
     const checkboxes = document.querySelectorAll('.cb-periode');
     const btnHapusMassal = document.getElementById('btn-hapus-massal');
@@ -181,7 +175,6 @@
       });
     }
 
-    // === 4. KONFIRMASI TOMBOL HAPUS SATUAN ===
     document.querySelectorAll(".btn-hapus").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.preventDefault();
