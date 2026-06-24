@@ -635,6 +635,8 @@ button.btn-delete:hover {
     text-decoration: none;
     display: inline-block;
     transition: all 0.2s;
+    margin-top: 20px; 
+    min-width: 100px;
 }
 
 .btn-cancel:hover {
