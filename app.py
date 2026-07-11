@@ -14,7 +14,6 @@ from PIL import Image
 # enkripsi dan dekripsi
 from lib.encryption import encrypt_data
 from lib.decryption import decrypt_data
-from lib.data_penerima_service import get_all_data_penerima_decrypted
 from lib.decryption import decrypt_data
 from flask import send_from_directory
 from datetime import datetime
@@ -24,6 +23,14 @@ import io
 import pandas as pd
 from flask import send_file
 from datetime import datetime
+
+# import laporan excel
+import io
+import os
+import pandas as pd
+from datetime import datetime
+from flask import send_file
+from reportlab.lib import colors 
 
 # import laporan PDF
 import io
@@ -39,7 +46,6 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 
 # import utilities
 from lib.password_utils import verify_password
-
 
 app = Flask(__name__)
 
@@ -418,7 +424,7 @@ def warga_penerima():
         SELECT w.*, u.nama_lengkap AS nama_petugas
         FROM warga_penerima w
         LEFT JOIN users u ON w.petugas_id = u.id
-        ORDER BY w.id DESC
+        ORDER BY w.id ASC
     """)
     rows = cursor.fetchall()
 
@@ -1107,13 +1113,6 @@ def hapus_periode_massal():
 def get_bukti(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-import io
-import os
-import pandas as pd
-from datetime import datetime
-from flask import send_file
-from reportlab.lib import colors 
-
 @app.route('/download_laporan')
 @require_login
 @require_superadmin
@@ -1312,17 +1311,6 @@ def download_laporan():
         as_attachment=True,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    
-import io
-import os
-from datetime import datetime
-from flask import send_file
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import cm
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, HRFlowable
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
 @app.route('/download_laporan_pdf')
 @require_login
@@ -1398,9 +1386,18 @@ def download_laporan_pdf():
 
     # pdf
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, 
-                            rightMargin=1.2*cm, leftMargin=1.2*cm, 
-                            topMargin=1.2*cm, bottomMargin=1.5*cm)
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=1.2*cm,
+        leftMargin=1.2*cm,
+        topMargin=1.2*cm,
+        bottomMargin=1.5*cm,
+        title=f"Laporan PKH Tahun {tahun_laporan}",
+        author="Pemerintah Desa Ngengor",
+        subject="Laporan Penyaluran Program Keluarga Harapan",
+        creator="Sistem Informasi Kelola Bantuan PKH"
+    )
     elements = []
     styles = getSampleStyleSheet()
 

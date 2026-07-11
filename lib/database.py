@@ -85,7 +85,6 @@ def init_database():
     try:
         cursor, use_dict = _get_cursor(connection)
         
-        # Buat tabel users
         create_table_query = """
         CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -100,7 +99,6 @@ def init_database():
         """
         cursor.execute(create_table_query)
         
-        # Insert superadmin jika belum ada
         check_user_query = "SELECT COUNT(*) as count FROM users WHERE email = 'superadmin@gmail.com'"
         cursor.execute(check_user_query)
         result = cursor.fetchone()
@@ -113,7 +111,6 @@ def init_database():
             count = 0
         
         if count == 0:
-            # Hash password sebelum disimpan
             hashed_password = generate_password_hash('superadmin123')
             
             insert_user_query = """
@@ -128,76 +125,6 @@ def init_database():
                 'aktif'
             ))
             print("Superadmin berhasil ditambahkan ke database!")
-            
-        # tabel master warga
-        create_warga_table = """
-        CREATE TABLE IF NOT EXISTS warga_penerima (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            nik_encrypted TEXT NOT NULL,
-            nama_encrypted TEXT NOT NULL,
-            tanggal_lahir_encrypted TEXT,
-            nomor_hp_encrypted TEXT,
-            rt_encrypted TEXT NOT NULL,
-            status ENUM('aktif','tidak_aktif') DEFAULT 'aktif',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-            created_by INT,
-            updated_by INT,
-            FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-            FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-        """
-        cursor.execute(create_warga_table)
-        
-        # tabel penyaluran penerima
-        create_penyaluran_table = """
-        CREATE TABLE IF NOT EXISTS penyaluran_bantuan (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            warga_id INT NOT NULL,
-            tanggal_terima DATE NOT NULL,
-            tahap VARCHAR(50) NOT NULL,
-            bukti_terima_path VARCHAR(255),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (warga_id) REFERENCES warga_penerima(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-        """
-        cursor.execute(create_penyaluran_table)
-        
-        # Buat tabel data_penerima untuk menyimpan data penerima terenkripsi
-        create_table_query = """
-        CREATE TABLE IF NOT EXISTS data_penerima (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            nik_encrypted TEXT NOT NULL,
-            no_kk_encrypted TEXT NOT NULL,
-            nama_encrypted TEXT NOT NULL,
-            alamat_encrypted TEXT NOT NULL,
-            jenis_kelamin_encrypted TEXT NOT NULL,
-            tanggal_lahir_encrypted TEXT NOT NULL,
-            tanggal_penerimaan_encrypted TEXT NOT NULL,
-            keterangan_encrypted TEXT,
-            no_hp_encrypted TEXT NULL,
-            uang_terima_encrypted TEXT NULL,
-            tanggungan_encrypted TEXT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            bukti_terima_path VARCHAR(500),
-            created_by INT NOT NULL,
-            FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-        """
-        cursor.execute(create_table_query)
-        
-        # Migrasi: tambah kolom baru jika tabel sudah ada (database lama)
-        for col in ['no_hp_encrypted', 'uang_terima_encrypted', 'tanggungan_encrypted']:
-            try:
-                cursor.execute(f"ALTER TABLE data_penerima ADD COLUMN {col} TEXT NULL")
-            except Exception:
-                pass
-        # Rename penghasilan_encrypted -> uang_terima_encrypted jika kolom lama masih ada
-        try:
-            cursor.execute("ALTER TABLE data_penerima CHANGE COLUMN penghasilan_encrypted uang_terima_encrypted TEXT NULL")
-        except Exception:
-            pass
         
         connection.commit()
         print("Database initialized successfully!")
@@ -234,7 +161,6 @@ def get_user_by_email(email):
         cursor.execute(query, (email,))
         user = cursor.fetchone()
         
-        # Convert tuple to dict if needed
         if user and not isinstance(user, dict) and not use_dict:
             columns = [desc[0] for desc in cursor.description]
             user = dict(zip(columns, user))
@@ -263,11 +189,10 @@ def get_all_users():
     try:
         cursor, use_dict = _get_cursor(connection)
         
-        query = "SELECT id, nama_lengkap, email, role, status_akun, created_at FROM users ORDER BY created_at DESC"
+        query = "SELECT id, nama_lengkap, email, role, status_akun, created_at FROM users ORDER BY created_at ASC"
         cursor.execute(query)
         users = cursor.fetchall()
-        
-        # Convert tuple to dict if needed
+
         if users and not isinstance(users[0], dict) and not use_dict:
             columns = [desc[0] for desc in cursor.description]
             users = [dict(zip(columns, user)) for user in users]
@@ -301,12 +226,10 @@ def create_user(nama_lengkap, password, email, role='petugas lapangan', status_a
                 cursor = connection.cursor(dictionary=True)
             except TypeError:
                 cursor = connection.cursor()
-        
-        # Hash password
+
         from lib.password_utils import hash_password
         hashed_password = hash_password(password)
         
-        # Cek apakah username atau email sudah ada
         check_query = "SELECT COUNT(*) as count FROM users WHERE email = %s"
         cursor.execute(check_query, (email))
         result = cursor.fetchone()
@@ -315,7 +238,6 @@ def create_user(nama_lengkap, password, email, role='petugas lapangan', status_a
         if count > 0:
             raise Exception("Username atau email sudah terdaftar!")
         
-        # Insert user baru
         insert_query = """
         INSERT INTO users (nama_lengkap, password, email, role, status_akun)
         VALUES (%s, %s, %s, %s, %s)
@@ -395,7 +317,6 @@ def update_user(user_id, nama_lengkap, email, role, status_akun, password=None):
             except TypeError:
                 cursor = connection.cursor()
         
-        # Cek apakah username atau email sudah digunakan user lain
         check_query = "SELECT COUNT(*) as count FROM users WHERE email = %s AND id != %s"
         cursor.execute(check_query, (email, user_id))
         result = cursor.fetchone()
@@ -404,7 +325,6 @@ def update_user(user_id, nama_lengkap, email, role, status_akun, password=None):
         if count > 0:
             raise Exception("Email sudah digunakan user lain!")
         
-        # Update user
         if password:
             from lib.password_utils import hash_password
             hashed_password = hash_password(password)
@@ -468,234 +388,3 @@ def delete_user(user_id):
             cursor.close()
         if connection:
             connection.close()
-
-def _ensure_data_penerima_extra_columns(cursor):
-    """
-    Tambah kolom no_hp_encrypted, uang_terima_encrypted, tanggungan_encrypted
-    jika belum ada (untuk database yang dibuat sebelum kolom ini ditambahkan).
-    """
-    try:
-        cursor.execute("ALTER TABLE data_penerima CHANGE COLUMN penghasilan_encrypted uang_terima_encrypted TEXT NULL")
-    except Exception:
-        pass
-    for col in ['no_hp_encrypted', 'uang_terima_encrypted', 'tanggungan_encrypted']:
-        try:
-            cursor.execute(f"ALTER TABLE data_penerima ADD COLUMN {col} TEXT NULL")
-        except Exception:
-            pass  # Kolom sudah ada
-
-
-def create_data_penerima(nik, no_kk, nama, alamat, jenis_kelamin, tanggal_lahir, 
-                         tanggal_penerimaan, keterangan, bukti_terima_path, created_by,
-                         no_hp=None, uang_terima=None, tanggungan=None):
-    """
-    Menyimpan data penerima terenkripsi ke database
-    """
-    if not PYMySQL_AVAILABLE:
-        raise Exception("Library MySQL belum terinstall. Install dengan: pip install pymysql")
-    
-    from lib.encryption import encrypt_data
-    
-    connection = get_db_connection()
-    if not connection:
-        raise Exception("Gagal koneksi ke database.")
-    
-    cursor = None
-    try:
-        try:
-            cursor = connection.cursor(pymysql.cursors.DictCursor)
-            use_dict = True
-        except (AttributeError, TypeError):
-            try:
-                cursor = connection.cursor(dictionary=True)
-                use_dict = True
-            except TypeError:
-                cursor = connection.cursor()
-                use_dict = False
-        
-        # Pastikan kolom opsional ada (migrasi untuk database lama)
-        _ensure_data_penerima_extra_columns(cursor)
-        connection.commit()
-        
-        # Enkripsi semua data
-        nik_encrypted = encrypt_data(nik)
-        no_kk_encrypted = encrypt_data(no_kk)
-        nama_encrypted = encrypt_data(nama)
-        alamat_encrypted = encrypt_data(alamat)
-        jenis_kelamin_encrypted = encrypt_data(jenis_kelamin)
-        tanggal_lahir_encrypted = encrypt_data(tanggal_lahir)
-        tanggal_penerimaan_encrypted = encrypt_data(tanggal_penerimaan)
-        keterangan_encrypted = encrypt_data(keterangan) if keterangan else None
-        no_hp_encrypted = encrypt_data(no_hp) if no_hp else None
-        uang_terima_encrypted = encrypt_data(uang_terima) if uang_terima else None
-        tanggungan_encrypted = encrypt_data(tanggungan) if tanggungan else None
-        
-        # Insert data terenkripsi
-        insert_query = """
-        INSERT INTO data_penerima (
-            nik_encrypted, no_kk_encrypted, nama_encrypted, alamat_encrypted,
-            jenis_kelamin_encrypted, tanggal_lahir_encrypted, tanggal_penerimaan_encrypted,
-            keterangan_encrypted, no_hp_encrypted, uang_terima_encrypted, tanggungan_encrypted,
-            bukti_terima_path, created_by
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        cursor.execute(insert_query, (
-            nik_encrypted, no_kk_encrypted, nama_encrypted, alamat_encrypted,
-            jenis_kelamin_encrypted, tanggal_lahir_encrypted, tanggal_penerimaan_encrypted,
-            keterangan_encrypted, no_hp_encrypted, uang_terima_encrypted, tanggungan_encrypted,
-            bukti_terima_path, created_by
-        ))
-        connection.commit()
-        return cursor.lastrowid
-    except Exception as e:
-        if connection:
-            connection.rollback()
-        raise Exception(f"Error creating data penerima: {e}")
-    finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
-
-
-def get_all_data_penerima():
-    """
-    Mengambil semua data penerima terenkripsi
-    """
-    if not PYMySQL_AVAILABLE:
-        raise Exception("Library MySQL belum terinstall. Install dengan: pip install pymysql")
-    
-    connection = get_db_connection()
-    if not connection:
-        raise Exception("Gagal koneksi ke database.")
-    
-    cursor = None
-    try:
-        try:
-            cursor = connection.cursor(pymysql.cursors.DictCursor)
-            use_dict = True
-        except (AttributeError, TypeError):
-            try:
-                cursor = connection.cursor(dictionary=True)
-                use_dict = True
-            except TypeError:
-                cursor = connection.cursor()
-                use_dict = False
-        
-        query = """
-        SELECT id, nik_encrypted, no_kk_encrypted, nama_encrypted, alamat_encrypted,
-               jenis_kelamin_encrypted, tanggal_lahir_encrypted, tanggal_penerimaan_encrypted,
-               keterangan_encrypted, no_hp_encrypted, uang_terima_encrypted, tanggungan_encrypted,
-               bukti_terima_path, created_by, created_at
-        FROM data_penerima
-        ORDER BY created_at DESC
-        """
-        cursor.execute(query)
-        results = cursor.fetchall()
-        
-        # Convert tuple to dict if needed
-        if results and not isinstance(results[0], dict) and not use_dict:
-            columns = [desc[0] for desc in cursor.description]
-            results = [dict(zip(columns, row)) for row in results]
-        
-        # Kembalikan data terenkripsi (tanpa dekripsi)
-        return results
-    except Exception as e:
-        raise Exception(f"Error fetching data penerima: {e}")
-    finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
-
-
-def get_count_data_penerima_by_user(user_id):
-    """
-    Menghitung jumlah data penerima yang diinput oleh user tertentu (created_by = user_id).
-    """
-    if not PYMySQL_AVAILABLE:
-        return 0
-    try:
-        user_id = int(user_id)
-    except (TypeError, ValueError):
-        return 0
-    connection = get_db_connection()
-    if not connection:
-        return 0
-    cursor = None
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT COUNT(*) AS cnt FROM data_penerima WHERE created_by = %s", (user_id,))
-        row = cursor.fetchone()
-        if row is None:
-            return 0
-        # PyMySQL returns tuple (count,); some drivers return dict
-        return int(row[0]) if isinstance(row, (tuple, list)) else int(row.get('cnt', 0))
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return 0
-    finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
-
-
-def get_count_all_data_penerima():
-    """
-    Menghitung jumlah total semua data penerima di database (untuk admin/superadmin).
-    """
-    if not PYMySQL_AVAILABLE:
-        return 0
-    connection = get_db_connection()
-    if not connection:
-        return 0
-    cursor = None
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT COUNT(*) AS cnt FROM data_penerima")
-        row = cursor.fetchone()
-        if row is None:
-            return 0
-        # PyMySQL returns tuple (count,); some drivers return dict
-        return int(row[0]) if isinstance(row, (tuple, list)) else int(row.get('cnt', 0))
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return 0
-    finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
-def create_warga(nik, nama, rt, created_by):
-    from lib.encryption import encrypt_data
-
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
-    nik_encrypted = encrypt_data(nik)
-    nama_encrypted = encrypt_data(nama)
-
-    query = """
-    INSERT INTO warga_penerima (nik_encrypted, nama_encrypted, rt_encrypted, created_by)
-    VALUES (%s, %s, %s, %s)
-    """
-    cursor.execute(query, (nik_encrypted, nama_encrypted, rt, created_by))
-
-    connection.commit()
-    connection.close()
-    
-def create_penyaluran(warga_id, tanggal_terima, tahap, bukti_path):
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
-    query = """
-    INSERT INTO penyaluran_bantuan (warga_id, tanggal_terima, tahap, bukti_terima_path)
-    VALUES (%s, %s, %s, %s)
-    """
-    cursor.execute(query, (warga_id, tanggal_terima, tahap, bukti_path))
-
-    connection.commit()
-    connection.close()

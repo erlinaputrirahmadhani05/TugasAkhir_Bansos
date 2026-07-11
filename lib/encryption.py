@@ -85,7 +85,7 @@ def rc4_encrypt(data, key):
         j = (j + array_S[i] + kunci_bytes[posisi_kunci]) % 256
         array_S[i], array_S[j] = array_S[j], array_S[i]
 
-    # --- PRGA (Pseudo Random Generation) ---
+    # --- PRGA (Pseudo Random Generation Algorithm) ---
     i = 0
     j = 0
     hasil_enkripsi = bytearray()
